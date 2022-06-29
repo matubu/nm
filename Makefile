@@ -4,7 +4,7 @@ Deps = $(wildcard incs/*.h) Makefile
 Objs = $(Srcs:srcs/%.c=bin/%.o)
 
 Incs = -I incs
-Flag = -Wall -Wextra -Werror $(Incs) -O3
+Flag = $(Incs)# -Wall -Wextra -Werror -O3
 
 Red = \033[0;1;91m
 Green = \033[0;1;92m

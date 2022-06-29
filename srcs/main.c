@@ -89,16 +89,25 @@ int	starts_with(const file_t *f, byte *p)
 }
 
 // addr
-uint64_t	get_elf_field(const elf_t *elf, elf_field_t field)
+uint64_t	get_field(const elf_t *elf, uint64_t off, elf_field_t field)
 {
 	const int		elf_class = elf->class - 1;
-	const size_t	off = field.off[elf_class];
 
+	off += field.off[elf_class];
 	if (off > elf->f->len)
+	{
+		err(elf->f->path, "(out of bound)");
+		printf("out\n");
 		return (0);
+	}
 
-	const uint64_t data = *(uint64_t *)(elf->f->ptr + off);
-	const uint64_t mask = (((uint64_t)1 << (8 * field.size[elf_class])) - 1);
+	const uint64_t	data = *(uint64_t *)(elf->f->ptr + off);
+	const uint64_t	mask_map[] = { 
+		0,           (1ULL<<(1*8))-1, (1ULL<<(2*8))-1, (1ULL<(3*8))-1,
+		(1ULL<<(4*8))-1, (1ULL<<(5*8))-1, (1ULL<<(6*8))-1, (1ULL<<(7*8))-1,
+		(uint64_t)-1
+	};
+	const uint64_t	mask = mask_map[field.size[elf_class]];
 
 	uint64_t masked = data & mask;
 
@@ -106,6 +115,7 @@ uint64_t	get_elf_field(const elf_t *elf, elf_field_t field)
 	{
 		// TODO test
 		// Swap endianess
+		printf("Swap endian\n");
 		masked = 0
 			| (masked >> (0 * 8) & (uint64_t)0XFF << (7 * 8))
 			| (masked >> (1 * 8) & (uint64_t)0XFF << (6 * 8))
@@ -120,11 +130,58 @@ uint64_t	get_elf_field(const elf_t *elf, elf_field_t field)
 
 	return (masked);
 }
+#define get_elf_field(elf, field) get_field(elf, 0, field)
 
 #define invalid_elf(elf, s) { \
 	err(elf->f->path, "Invalid ELF file: " s); \
 	free(elf); \
 	return (NULL); \
+}
+
+void	print_flags(uint64_t flags, mask_mapping_t *mapping)
+{
+	int	printed = 0;
+
+	for (int i = 0; mapping[i].mask; ++i)
+	{
+		if (flags & mapping[i].mask)
+		{
+			if (printed++)
+				printf(", ");
+			else
+				printf("[ ");
+			printf("\033[32m%s\033[0m", mapping[i].mapped);
+		}
+	}
+	if (printed == 0)
+		puts("\033[30mNo flags\033[0m");
+	else
+		puts(" ]");
+}
+
+void	parse_elf_sections(elf_t *elf)
+{
+	uint64_t	sec_off = get_elf_field(elf, ELF_SHOFF);
+	uint64_t	sec_num = get_elf_field(elf, ELF_SHNUM);
+
+	uint64_t	names_sec_idx = get_elf_field(elf, ELF_SHSTRNDX);
+	uint64_t	names_sec_header_off = sec_off
+		+ names_sec_idx * SEC_HEADER.size[elf->class - 1];
+	uint64_t	names_sec_off
+		= get_field(elf, names_sec_header_off, SEC_OFFSET);
+
+	for (uint64_t i = 0; i < sec_num; ++i)
+	{
+		uint64_t	name_off = get_field(elf, sec_off, SEC_NAME);
+		printf("\033[94m%s\033[0m (%s)\n",
+			elf->f->ptr + names_sec_off + name_off,
+			GET_STRING_MAPPING(sec_type, get_field(elf, sec_off, SEC_TYPE))
+		);
+		print_flags(get_field(elf, sec_off, SEC_FLAGS), sec_flags);
+		puts("");
+
+		sec_off += SEC_HEADER.size[elf->class - 1];
+	}
 }
 
 elf_t	*elf_from_string(const file_t *f)
@@ -145,12 +202,15 @@ elf_t	*elf_from_string(const file_t *f)
 	if (elf->class != 1 && elf->class != 2)
 		invalid_elf(elf, "invalid class");
 
+	if (f->len < ELF_HEADER.size[elf->class - 1]) // Header too small
+		invalid_elf(elf, "header incomplete");
+
 	elf->endian = get_elf_field(elf, ELF_DATA); // Check valid endian
 	if (elf->endian != 1 && elf->endian != 2)
 		invalid_elf(elf, "invalid endianness");
-
-	if (f->len < ELF_HEADER.size[elf->class - 1]) // Header too small
-		invalid_elf(elf, "header incomplete");
+	
+	if (get_elf_field(elf, ELF_EI_VERSION) != 1 || get_elf_field(elf, ELF_VERSION) != 1)
+		invalid_elf(elf, "unsupported elf version");
 
 	printf("currentEndian %s\n", elf_data[CurrentEndian]);
 
@@ -162,6 +222,9 @@ elf_t	*elf_from_string(const file_t *f)
 
 	printf("%s\n", GET_STRING_MAPPING(elf_type, get_elf_field(elf, ELF_TYPE)));
 	printf("%s\n", GET_STRING_MAPPING(elf_machine, get_elf_field(elf, ELF_MACHINE)));
+
+	puts("");
+	parse_elf_sections(elf);
 
 	return (elf);
 }
