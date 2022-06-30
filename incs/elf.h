@@ -422,6 +422,46 @@ elf_field_t SYM_INFO = {
 	{1, 1}
 }; // The symbol's type and binding attributes
 
+// https://docs.oracle.com/cd/E23824_01/html/819-0690/chapter6-79797.html
+// https://blog.k3170makan.com/2018/10/introduction-to-elf-format-part-vi.html
+#define ST_BIND(info) ((info) >> 4)
+#define STB_LOCAL	0
+#define STB_GLOBAL	1
+#define STB_WEAK	2
+
+
+#define ST_TYPE(info) ((info) & 0xf)
+
+// https://docs.oracle.com/cd/E23824_01/html/819-0690/chapter6-79797.html
+#define STT_NOTYPE			0 // type not defined
+#define STT_OBJECT			1 // data object (variables, arrays...)
+#define STT_FUNC			2 // function
+#define STT_SECTION			3 // section
+#define STT_FILE			4 // file
+#define STT_COMMON			5 // common block (same as STT_OBJECT)
+#define STT_TLS				6 // thread local entity
+
+// https://linux.die.net/man/1/nm
+const char	*sym_type_mapping[] = {
+	"a", // is absolute
+	"b", // in uninitialized data section (bss)
+	"c", // is common
+	"d", // in the data section
+	"g", // in a data section for small objects
+	"i", // in a section specific to the implementation of DLLs
+	"n", // is adebugging symbol
+	"p", // in a stack unwind section
+	"r", // in a read only data section
+	"s", // in a data section for small objects (same as g ?)
+	"t", // in text code
+	"U", // is undefined
+	"u", // is a unique global symbol
+	"v", // is a weak object
+	"w", // is a weak symbol
+	"-", // is a stabs symbol in an a.out object file
+	"?", // unknown
+};
+
 elf_field_t SYM_OTHER = {
 	{0xD, 0x5},
 	{1, 1}

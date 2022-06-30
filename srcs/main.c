@@ -10,14 +10,6 @@
 
 #include <stdio.h>
 
-// typedef enum {
-// 	debugger_symbols      =0b00001, // -a
-// 	only_global_symbols   =0b00010, // -g
-// 	only_undefined_symbols=0b00100, // -u
-// 	reverse_sort          =0b01000, // -r
-// 	no_sort               =0b10000, // -p
-// }	flags_e;
-
 void	err(char *file, char *err)
 {
 	printf("nm: \033[91merror:\033[0m %s: %s\n", file, err);
@@ -158,7 +150,20 @@ void	parse_elf_symbols(elf_t *elf, u64 sec_off, const char *str_table_name)
 
 	while (sym_sec_off < sym_sec_end)
 	{
-		printf("%016lx ", get_field(elf, sym_sec_off, SYM_VALUE));
+		u64	value = get_field(elf, sym_sec_off, SYM_VALUE);
+		if (value)
+			printf("%016lx ", value);
+		else
+			printf("%16s ", "");
+
+
+		if (ST_BIND(get_field(elf, sym_sec_off, SYM_INFO)) == STB_GLOBAL)
+			printf("G");
+		else
+			printf(" ");
+		printf(" ");
+
+
 		if (get_field(elf, sym_sec_off, SYM_NAME))
 			printf("%s", elf->f->ptr + sym_names_sec + get_field(elf, sym_sec_off, SYM_NAME));
 		puts("");
