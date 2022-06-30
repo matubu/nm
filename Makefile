@@ -41,7 +41,7 @@ re: fclean all
 
 elf_linux:
 	@echo 🐧 Linux mode
-	@gcc test/elf.c -o elf
+	@gcc test/elf.c -Os -o elf
 	@echo Successfully created elf
 	
 elf_docker:

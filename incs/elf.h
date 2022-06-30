@@ -19,6 +19,8 @@ typedef struct {
 #define BigEndian 2
 #define CurrentEndian (2 - *(char *)((int []){1}) == 1)
 
+// https://refspecs.linuxbase.org/elf/elf.pdf
+
 // File header
 // https://en.wikipedia.org/wiki/Executable_and_Linkable_Format#File_header
 
@@ -290,10 +292,10 @@ elf_field_t PROG_ALIGN = {
 	{4, 8}
 }; // 0 and 1 specify no alignment. Otherwise should be a positive, integral power of 2, with p_vaddr equating p_offset modulus p_align
 
-elf_field_t PROG_HEADER = {
-	{0, 0},
-	{0x20, 0x38}
-}; // The start to end of the program header
+// elf_field_t PROG_HEADER = {
+// 	{0, 0},
+// 	{0x20, 0x38}
+// }; // The start to end of the program header
 
 
 
@@ -398,41 +400,42 @@ elf_field_t SEC_HEADER = {
 
 // Symbol table header
 // https://docs.oracle.com/cd/E23824_01/html/819-0690/chapter6-79797.html
+// https://blog.k3170makan.com/2018/10/introduction-to-elf-format-part-vi.html
 
 elf_field_t SYM_NAME = {
 	{0x0, 0x0},
-	{4, 8}
+	{4, 4}
 }; // Offset string in string table can be NULL
 
 elf_field_t SYM_VALUE = {
-	{0x4, 0x10},
+	{0x4, 0x8},
 	{4, 8}
 }; // Can be an absolute value, an address, and so forth. See https://docs.oracle.com/cd/E19683-01/816-1386/6m7qcoblj/index.html#chapter6-35166
 
 elf_field_t SYM_SIZE = {
-	{0x8, 0x18},
+	{0x8, 0x10},
 	{4, 8}
 }; // Can be the number of bytes contained in the object. If this member holds 0 the symbol has no size or an unknown size
 
 elf_field_t SYM_INFO = {
-	{0xC, 0x8},
+	{0xC, 0x4},
 	{1, 1}
 }; // The symbol's type and binding attributes
 
 elf_field_t SYM_OTHER = {
-	{0xD, 0x9},
+	{0xD, 0x5},
 	{1, 1}
 }; // The symbol's visibility (mask 0x3)
 
 elf_field_t SYM_SHNDX = {
-	{0xE, 0xC},
+	{0xE, 0x6},
 	{2, 4}
 }; // This member holds the relevant section header table index
 
-elf_field_t SYM_HEADER = {
-	{0, 0},
-	{0x10, 0x20}
-};
+// elf_field_t SYM_HEADER = {
+// 	{0, 0},
+// 	{0x10, 0x18}
+// };
 
 typedef struct {
 	char	*prog_header;
@@ -447,4 +450,5 @@ typedef struct {
 	int				class; // 1 == 32bit,  2 == 64bit
 	int				endian; // 1 == Little-endian,  2 == Big-endian
 	elf_mapping_t	mapping;
+	u64				names_sec_off;
 }	elf_t;

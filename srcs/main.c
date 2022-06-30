@@ -103,26 +103,68 @@ void	print_flags(u64 flags, const mask_mapping_t *mapping)
 		puts(" ]");
 }
 
+int strsame(const byte *a, const byte *b)
+{
+	while (*a && *a == *b)
+	{
+		++a;
+		++b;
+	}
+	return (*a == *b);
+}
+
+byte	*get_section_name(elf_t *elf, u64 sec_off)
+{
+	return (
+		elf->f->ptr
+		+ elf->names_sec_off
+		+ get_field(elf, sec_off, SEC_NAME)
+	);
+}
+
+u64		find_section(elf_t *elf, const byte *name)
+{
+	u64	sec_off = get_elf_field(elf, ELF_SHOFF);
+	u64	sec_num = get_elf_field(elf, ELF_SHNUM);
+	
+	for (u64 i = 0; i < sec_num; ++i)
+	{
+		if (strsame(get_section_name(elf, sec_off), name))
+			return (get_field(elf, sec_off, SEC_OFFSET));
+		sec_off += SEC_HEADER.size[elf->class - 1];
+	}
+	return (0);
+}
+
+u64	find_names_sec_off(elf_t *elf)
+{
+	u64	names_sec_idx = get_elf_field(elf, ELF_SHSTRNDX);
+	u64	sections_table_off = get_elf_field(elf, ELF_SHOFF);
+
+	u64	names_sec_header_off = sections_table_off
+		+ names_sec_idx * SEC_HEADER.size[elf->class - 1];
+
+	return (get_field(elf, names_sec_header_off, SEC_OFFSET));
+}
+
+// readelf -s elf
 void	parse_elf_symbols(elf_t *elf, u64 sec_off)
 {
+	elf->names_sec_off = find_names_sec_off(elf);
+
 	u64	sym_sec_off = get_field(elf, sec_off, SEC_OFFSET);
 	u64	sym_sec_end = sym_sec_off + get_field(elf, sec_off, SEC_SIZE);
 	u64	sym_sec_entsize = get_field(elf, sec_off, SEC_ENTSIZE);
 
-	printf("addr=%lu\n", get_field(elf, sec_off, SEC_ADDR));
-	printf("off=%lu  0x%lx 0x%zx\n", sym_sec_off, sym_sec_entsize, SYM_HEADER.size[elf->class - 1]);
+	u64	sym_names_sec = find_section(elf, (byte *)".strtab");
+
 	while (sym_sec_off < sym_sec_end)
 	{
-		printf("nameoff=%lu\n", get_field(elf, sym_sec_off, SYM_NAME));
 		if (get_field(elf, sym_sec_off, SYM_NAME))
-			printf("%s\n", elf->f->ptr + get_field(elf, sym_sec_off, SYM_NAME));
-		//sym_sec_off += sym_sec_entsize;
-		sym_sec_off += /*sym_sec_entsize;*/SYM_HEADER.size[elf->class - 1];
+			printf("%s\n", elf->f->ptr + sym_names_sec + get_field(elf, sym_sec_off, SYM_NAME));
+
+		sym_sec_off += sym_sec_entsize;
 	}
-	// for (int i = 0; i < ; ++i)
-	// {
-	// 	sym_sec_off += sym_sec_entsize;
-	// }
 }
 
 void	parse_elf_sections(elf_t *elf)
@@ -130,17 +172,10 @@ void	parse_elf_sections(elf_t *elf)
 	u64	sec_off = get_elf_field(elf, ELF_SHOFF);
 	u64	sec_num = get_elf_field(elf, ELF_SHNUM);
 
-	u64	names_sec_idx = get_elf_field(elf, ELF_SHSTRNDX);
-	u64	names_sec_header_off = sec_off
-		+ names_sec_idx * SEC_HEADER.size[elf->class - 1];
-	u64	names_sec_off
-		= get_field(elf, names_sec_header_off, SEC_OFFSET);
-
 	for (u64 i = 0; i < sec_num; ++i)
 	{
-		u64	name_off = get_field(elf, sec_off, SEC_NAME);
 		printf("\033[94m%s\033[0m (%s)\n",
-			elf->f->ptr + names_sec_off + name_off,
+			get_section_name(elf, sec_off),
 			GET_STRING_MAPPING(sec_type, get_field(elf, sec_off, SEC_TYPE))
 		);
 		print_flags(get_field(elf, sec_off, SEC_FLAGS), sec_flags);
