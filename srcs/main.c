@@ -138,7 +138,7 @@ uint64_t	get_field(const elf_t *elf, uint64_t off, elf_field_t field)
 	return (NULL); \
 }
 
-void	print_flags(uint64_t flags, mask_mapping_t *mapping)
+void	print_flags(uint64_t flags, const mask_mapping_t *mapping)
 {
 	int	printed = 0;
 
@@ -157,6 +157,28 @@ void	print_flags(uint64_t flags, mask_mapping_t *mapping)
 		puts("\033[30mNo flags\033[0m");
 	else
 		puts(" ]");
+}
+
+void	parse_elf_symbols(elf_t *elf, uint64_t sec_off)
+{
+	uint64_t	sym_sec_off = get_field(elf, sec_off, SEC_OFFSET);
+	uint64_t	sym_sec_end = sym_sec_off + get_field(elf, sec_off, SEC_SIZE);
+	uint64_t	sym_sec_entsize = get_field(elf, sec_off, SEC_ENTSIZE);
+
+	printf("addr=%llu\n", get_field(elf, sec_off, SEC_ADDR));
+	printf("off=%llu  0x%llx 0x%zx\n", sym_sec_off, sym_sec_entsize, SYM_HEADER.size[elf->class - 1]);
+	while (sym_sec_off < sym_sec_end)
+	{
+		printf("nameoff=%llu\n", get_field(elf, sym_sec_off, SYM_NAME));
+		if (get_field(elf, sym_sec_off, SYM_NAME))
+			printf("%s\n", elf->f->ptr + get_field(elf, sym_sec_off, SYM_NAME));
+		//sym_sec_off += sym_sec_entsize;
+		sym_sec_off += /*sym_sec_entsize;*/SYM_HEADER.size[elf->class - 1];
+	}
+	// for (int i = 0; i < ; ++i)
+	// {
+	// 	sym_sec_off += sym_sec_entsize;
+	// }
 }
 
 void	parse_elf_sections(elf_t *elf)
@@ -179,6 +201,9 @@ void	parse_elf_sections(elf_t *elf)
 		);
 		print_flags(get_field(elf, sec_off, SEC_FLAGS), sec_flags);
 		puts("");
+
+		if (get_field(elf, sec_off, SEC_TYPE) == SymbolTable)
+			parse_elf_symbols(elf, sec_off);
 
 		sec_off += SEC_HEADER.size[elf->class - 1];
 	}

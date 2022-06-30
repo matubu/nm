@@ -329,6 +329,9 @@ const char	*sec_type[] = {
 	"Extended section indices",
 	"Number of defined types"
 };
+#define SymbolTable              2
+#define SymbolHashTable          5
+#define DynamicLinkerSymbolTable 11
 
 elf_field_t SEC_FLAGS = {
 	{0x8, 0x8},
@@ -391,6 +394,45 @@ elf_field_t SEC_HEADER = {
 	{0x28, 0x40}
 }; // The start to end of the section header
 
+
+
+// Symbol table header
+// https://docs.oracle.com/cd/E23824_01/html/819-0690/chapter6-79797.html
+
+elf_field_t SYM_NAME = {
+	{0x0, 0x0},
+	{4, 8}
+}; // Offset string in string table can be NULL
+
+elf_field_t SYM_VALUE = {
+	{0x4, 0x10},
+	{4, 8}
+}; // Can be an absolute value, an address, and so forth. See https://docs.oracle.com/cd/E19683-01/816-1386/6m7qcoblj/index.html#chapter6-35166
+
+elf_field_t SYM_SIZE = {
+	{0x8, 0x18},
+	{4, 8}
+}; // Can be the number of bytes contained in the object. If this member holds 0 the symbol has no size or an unknown size
+
+elf_field_t SYM_INFO = {
+	{0xC, 0x8},
+	{1, 1}
+}; // The symbol's type and binding attributes
+
+elf_field_t SYM_OTHER = {
+	{0xD, 0x9},
+	{1, 1}
+}; // The symbol's visibility (mask 0x3)
+
+elf_field_t SYM_SHNDX = {
+	{0xE, 0xC},
+	{2, 4}
+}; // This member holds the relevant section header table index
+
+elf_field_t SYM_HEADER = {
+	{0, 0},
+	{0x10, 0x20}
+};
 
 
 typedef struct {
