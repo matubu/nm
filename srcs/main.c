@@ -136,7 +136,7 @@ u64		find_section(elf_t *elf, const byte *name)
 	return (0);
 }
 
-u64	find_names_sec_off(elf_t *elf)
+u64	get_names_sec_off(elf_t *elf)
 {
 	u64	names_sec_idx = get_elf_field(elf, ELF_SHSTRNDX);
 	u64	sections_table_off = get_elf_field(elf, ELF_SHOFF);
@@ -148,27 +148,30 @@ u64	find_names_sec_off(elf_t *elf)
 }
 
 // readelf -s elf
-void	parse_elf_symbols(elf_t *elf, u64 sec_off)
+void	parse_elf_symbols(elf_t *elf, u64 sec_off, const char *str_table_name)
 {
-	elf->names_sec_off = find_names_sec_off(elf);
-
 	u64	sym_sec_off = get_field(elf, sec_off, SEC_OFFSET);
 	u64	sym_sec_end = sym_sec_off + get_field(elf, sec_off, SEC_SIZE);
 	u64	sym_sec_entsize = get_field(elf, sec_off, SEC_ENTSIZE);
 
-	u64	sym_names_sec = find_section(elf, (byte *)".strtab");
+	u64	sym_names_sec = find_section(elf, (byte *)str_table_name);
 
 	while (sym_sec_off < sym_sec_end)
 	{
+		printf("%016lx ", get_field(elf, sym_sec_off, SYM_VALUE));
 		if (get_field(elf, sym_sec_off, SYM_NAME))
-			printf("%s\n", elf->f->ptr + sym_names_sec + get_field(elf, sym_sec_off, SYM_NAME));
+			printf("%s", elf->f->ptr + sym_names_sec + get_field(elf, sym_sec_off, SYM_NAME));
+		puts("");
 
 		sym_sec_off += sym_sec_entsize;
 	}
+	puts("");
 }
 
 void	parse_elf_sections(elf_t *elf)
 {
+	elf->names_sec_off = get_names_sec_off(elf);
+
 	u64	sec_off = get_elf_field(elf, ELF_SHOFF);
 	u64	sec_num = get_elf_field(elf, ELF_SHNUM);
 
@@ -182,7 +185,9 @@ void	parse_elf_sections(elf_t *elf)
 		puts("");
 
 		if (get_field(elf, sec_off, SEC_TYPE) == SymbolTable)
-			parse_elf_symbols(elf, sec_off);
+			parse_elf_symbols(elf, sec_off, ".strtab");
+		if (get_field(elf, sec_off, SEC_TYPE) == DynamicLinkerSymbolTable)
+			parse_elf_symbols(elf, sec_off, ".dynstr");
 
 		sec_off += SEC_HEADER.size[elf->class - 1];
 	}
@@ -199,20 +204,25 @@ elf_t	*elf_from_string(const file_t *f)
 	elf->f = f;
 	elf->class = 1;
 
-	if (get_elf_field(elf, ELF_MAGIC) != elf_magic) // Check magic
+	// Check magic's bytes
+	if (get_elf_field(elf, ELF_MAGIC) != elf_magic)
 		invalid_elf(elf, "invalid magic bytes");
 
-	elf->class = get_elf_field(elf, ELF_CLASS); // Check valid class
+	// Check the class (64 or 32 bit)
+	elf->class = get_elf_field(elf, ELF_CLASS);
 	if (elf->class != 1 && elf->class != 2)
 		invalid_elf(elf, "invalid class");
 
-	if (f->len < ELF_HEADER.size[elf->class - 1]) // Header too small
+	// Check is big enough to contain the entire header depending on the class
+	if (f->len < ELF_HEADER.size[elf->class - 1])
 		invalid_elf(elf, "header incomplete");
 
-	elf->endian = get_elf_field(elf, ELF_DATA); // Check valid endian
+	// Check the endianess (Little-endian or Big-endian)
+	elf->endian = get_elf_field(elf, ELF_DATA);
 	if (elf->endian != 1 && elf->endian != 2)
 		invalid_elf(elf, "invalid endianness");
-	
+
+	// Check if the elf version is supported
 	if (get_elf_field(elf, ELF_EI_VERSION) != 1 || get_elf_field(elf, ELF_VERSION) != 1)
 		invalid_elf(elf, "unsupported elf version");
 
@@ -228,6 +238,7 @@ elf_t	*elf_from_string(const file_t *f)
 	printf("%s\n", GET_STRING_MAPPING(elf_machine, get_elf_field(elf, ELF_MACHINE)));
 
 	puts("");
+
 	parse_elf_sections(elf);
 
 	return (elf);
