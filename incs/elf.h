@@ -1,9 +1,7 @@
 #pragma once
 
 #include <stdlib.h>
-
-typedef unsigned char	byte;
-typedef unsigned long	size_t;
+#include "file.h"
 
 typedef struct {
 	size_t	off[2];  // [ off32 , off64  ]
@@ -11,13 +9,15 @@ typedef struct {
 }	elf_field_t;
 
 typedef struct {
-	uint64_t	mask;
+	u64	mask;
 	char		*mapped;
 }	mask_mapping_t;
 
 #define GET_STRING_MAPPING(arr, n) n >= (sizeof(arr) / sizeof(arr[0])) ? NULL : arr[n]
 
-
+#define LittleEndian 1
+#define BigEndian 2
+#define CurrentEndian (2 - *(char *)((int []){1}) == 1)
 
 // File header
 // https://en.wikipedia.org/wiki/Executable_and_Linkable_Format#File_header
@@ -26,7 +26,7 @@ elf_field_t ELF_MAGIC = {
 	{0x0, 0x0},
 	{4, 4}
 };
-#define elf_magic (*(uint64_t *)("\x7F""ELF\0\0\0\0"))
+#define elf_magic (*(u64 *)("\x7F""ELF\0\0\0\0"))
 
 elf_field_t ELF_CLASS = {
 	{0x4, 0x4},
@@ -433,13 +433,6 @@ elf_field_t SYM_HEADER = {
 	{0, 0},
 	{0x10, 0x20}
 };
-
-
-typedef struct {
-	char	*path;
-	byte	*ptr;
-	size_t	len;
-}	file_t;
 
 typedef struct {
 	char	*prog_header;

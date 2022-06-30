@@ -2,18 +2,13 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <fcntl.h>
-#include <stdint.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
 
 #include "elf.h"
+#include "file.h"
+
 
 #include <stdio.h>
-
-#define LittleEndian 1
-#define BigEndian 2
-#define CurrentEndian (*(char *)((int []){1}) == 1 ? LittleEndian : BigEndian)
 
 // typedef enum {
 // 	debugger_symbols      =0b00001, // -a
@@ -33,63 +28,22 @@ void	sys_err(char *file)
 	printf("nm: \033[91merror:\033[0m %s: %s\n", file, strerror(errno));
 }
 
-static inline file_t	*new_file_t(char *path, byte *ptr, size_t len)
+u64	swap_endianess(u64 a)
 {
-	file_t	*f = malloc(sizeof(file_t));
-	if (f == NULL)
-		return (NULL);
-
-	f->path = path;
-	f->ptr = ptr;
-	f->len = len;
-	return (f);
-}
-
-void	puts_string(const file_t *s)
-{
-	write(1, s->ptr, s->len);
-	write(1, "\n", 1);
-}
-
-void	free_string(file_t *s)
-{
-	munmap(s->ptr, s->len);
-	free(s);
-}
-
-file_t	*read_file(char *path)
-{
-	int	fd = open(path, O_RDONLY);
-	struct stat info;
-
-	if (fd < 0)
-		return (NULL);
-	if (fstat(fd, &info) < 0)
-		return (NULL);
-	if (S_ISDIR(info.st_mode))
-	{
-		errno = EISDIR;
-		return (NULL);
-	}
-
-	void	*ptr = mmap(NULL, info.st_size, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
-	if (ptr == MAP_FAILED)
-		return NULL;
-
-	return (new_file_t(path, ptr, info.st_size));
-}
-
-int	starts_with(const file_t *f, byte *p)
-{
-	printf("starts_with(%x, %x)\n", *f->ptr, *p);
-	for (size_t i = 0; p[i]; ++i)
-		if (i >= f->len || p[i] != f->ptr[i])
-			return (0);
-	return (1);
+	return (0
+		| (a            & (u64)0XFF << (7 * 8))
+		| (a >> (1 * 8) & (u64)0XFF << (6 * 8))
+		| (a >> (2 * 8) & (u64)0XFF << (5 * 8))
+		| (a >> (3 * 8) & (u64)0XFF << (4 * 8))
+		| (a >> (4 * 8) & (u64)0XFF << (3 * 8))
+		| (a >> (5 * 8) & (u64)0XFF << (2 * 8))
+		| (a >> (6 * 8) & (u64)0XFF << (1 * 8))
+		| (a >> (7 * 8)             << (0 * 8))
+	);
 }
 
 // addr
-uint64_t	get_field(const elf_t *elf, uint64_t off, elf_field_t field)
+u64	get_field(const elf_t *elf, u64 off, elf_field_t field)
 {
 	const int		elf_class = elf->class - 1;
 
@@ -101,31 +55,21 @@ uint64_t	get_field(const elf_t *elf, uint64_t off, elf_field_t field)
 		return (0);
 	}
 
-	const uint64_t	data = *(uint64_t *)(elf->f->ptr + off);
-	const uint64_t	mask_map[] = { 
-		0,           (1ULL<<(1*8))-1, (1ULL<<(2*8))-1, (1ULL<(3*8))-1,
+	const u64	data = *(u64 *)(elf->f->ptr + off);
+	const u64	mask_map[] = { 
+		0,               (1ULL<<(1*8))-1, (1ULL<<(2*8))-1, (1ULL<<(3*8))-1,
 		(1ULL<<(4*8))-1, (1ULL<<(5*8))-1, (1ULL<<(6*8))-1, (1ULL<<(7*8))-1,
-		(uint64_t)-1
+		(u64)-1
 	};
-	const uint64_t	mask = mask_map[field.size[elf_class]];
+	const u64	mask = mask_map[field.size[elf_class]];
 
-	uint64_t masked = data & mask;
+	u64 masked = data & mask;
 
 	if (off >= 0x10 && CurrentEndian != elf->endian)
 	{
 		// TODO test
-		// Swap endianess
 		printf("Swap endian\n");
-		masked = 0
-			| (masked >> (0 * 8) & (uint64_t)0XFF << (7 * 8))
-			| (masked >> (1 * 8) & (uint64_t)0XFF << (6 * 8))
-			| (masked >> (2 * 8) & (uint64_t)0XFF << (5 * 8))
-			| (masked >> (3 * 8) & (uint64_t)0XFF << (4 * 8))
-			| (masked >> (4 * 8) & (uint64_t)0XFF << (3 * 8))
-			| (masked >> (5 * 8) & (uint64_t)0XFF << (2 * 8))
-			| (masked >> (6 * 8) & (uint64_t)0XFF << (1 * 8))
-			| (masked >> (7 * 8) & (uint64_t)0XFF << (0 * 8))
-		;
+		masked = swap_endianess(masked);
 	}
 
 	return (masked);
@@ -138,7 +82,7 @@ uint64_t	get_field(const elf_t *elf, uint64_t off, elf_field_t field)
 	return (NULL); \
 }
 
-void	print_flags(uint64_t flags, const mask_mapping_t *mapping)
+void	print_flags(u64 flags, const mask_mapping_t *mapping)
 {
 	int	printed = 0;
 
@@ -159,17 +103,17 @@ void	print_flags(uint64_t flags, const mask_mapping_t *mapping)
 		puts(" ]");
 }
 
-void	parse_elf_symbols(elf_t *elf, uint64_t sec_off)
+void	parse_elf_symbols(elf_t *elf, u64 sec_off)
 {
-	uint64_t	sym_sec_off = get_field(elf, sec_off, SEC_OFFSET);
-	uint64_t	sym_sec_end = sym_sec_off + get_field(elf, sec_off, SEC_SIZE);
-	uint64_t	sym_sec_entsize = get_field(elf, sec_off, SEC_ENTSIZE);
+	u64	sym_sec_off = get_field(elf, sec_off, SEC_OFFSET);
+	u64	sym_sec_end = sym_sec_off + get_field(elf, sec_off, SEC_SIZE);
+	u64	sym_sec_entsize = get_field(elf, sec_off, SEC_ENTSIZE);
 
-	printf("addr=%llu\n", get_field(elf, sec_off, SEC_ADDR));
-	printf("off=%llu  0x%llx 0x%zx\n", sym_sec_off, sym_sec_entsize, SYM_HEADER.size[elf->class - 1]);
+	printf("addr=%lu\n", get_field(elf, sec_off, SEC_ADDR));
+	printf("off=%lu  0x%lx 0x%zx\n", sym_sec_off, sym_sec_entsize, SYM_HEADER.size[elf->class - 1]);
 	while (sym_sec_off < sym_sec_end)
 	{
-		printf("nameoff=%llu\n", get_field(elf, sym_sec_off, SYM_NAME));
+		printf("nameoff=%lu\n", get_field(elf, sym_sec_off, SYM_NAME));
 		if (get_field(elf, sym_sec_off, SYM_NAME))
 			printf("%s\n", elf->f->ptr + get_field(elf, sym_sec_off, SYM_NAME));
 		//sym_sec_off += sym_sec_entsize;
@@ -183,18 +127,18 @@ void	parse_elf_symbols(elf_t *elf, uint64_t sec_off)
 
 void	parse_elf_sections(elf_t *elf)
 {
-	uint64_t	sec_off = get_elf_field(elf, ELF_SHOFF);
-	uint64_t	sec_num = get_elf_field(elf, ELF_SHNUM);
+	u64	sec_off = get_elf_field(elf, ELF_SHOFF);
+	u64	sec_num = get_elf_field(elf, ELF_SHNUM);
 
-	uint64_t	names_sec_idx = get_elf_field(elf, ELF_SHSTRNDX);
-	uint64_t	names_sec_header_off = sec_off
+	u64	names_sec_idx = get_elf_field(elf, ELF_SHSTRNDX);
+	u64	names_sec_header_off = sec_off
 		+ names_sec_idx * SEC_HEADER.size[elf->class - 1];
-	uint64_t	names_sec_off
+	u64	names_sec_off
 		= get_field(elf, names_sec_header_off, SEC_OFFSET);
 
-	for (uint64_t i = 0; i < sec_num; ++i)
+	for (u64 i = 0; i < sec_num; ++i)
 	{
-		uint64_t	name_off = get_field(elf, sec_off, SEC_NAME);
+		u64	name_off = get_field(elf, sec_off, SEC_NAME);
 		printf("\033[94m%s\033[0m (%s)\n",
 			elf->f->ptr + names_sec_off + name_off,
 			GET_STRING_MAPPING(sec_type, get_field(elf, sec_off, SEC_TYPE))
@@ -265,7 +209,7 @@ void	nm(char *path)
 	// puts_string(f);
 	elf_from_string(f);
 
-	free_string(f);
+	free_file(f);
 }
 
 int	main(int argc, char **argv)
