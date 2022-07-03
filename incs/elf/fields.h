@@ -1,7 +1,8 @@
 #pragma once
 
 #include <stdlib.h>
-#include "file.h"
+
+#include "int.h"
 
 typedef struct {
 	usize	off[2];  // [ off32 , off64  ]
@@ -460,19 +461,3 @@ elf_field_t SYM_SHNDX = {
 // 	{0, 0},
 // 	{0x10, 0x18}
 // };
-
-typedef struct {
-	char	*prog_header;
-	char	*code;
-	char	*data;
-	char	*sections_name;
-	char	*sec_header;
-}	elf_mapping_t;
-
-typedef struct {
-	const file_t	*f;
-	int				class; // 1 == 32bit,  2 == 64bit
-	int				endian; // 1 == Little-endian,  2 == Big-endian
-	elf_mapping_t	mapping;
-	u64				names_sec_off;
-}	elf_t;
