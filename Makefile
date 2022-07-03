@@ -4,7 +4,7 @@ Deps = $(wildcard incs/*.h) Makefile
 Objs = $(Srcs:srcs/%.c=bin/%.o)
 
 Incs = -I incs
-Flag = $(Incs) -Wall -Wextra -Werror -O3
+Flag = $(Incs) -Wall -Wextra -Werror -O3 -fsanitize=address -g
 
 Red = \033[0;1;91m
 Green = \033[0;1;92m
@@ -41,18 +41,25 @@ re: fclean all
 
 elf_linux:
 	@echo 🐧 Linux mode
-	@gcc test/elf.c -Os -o elf
+	@gcc test/elf.c -o elf
+	@gcc test/elf.c -o elf.o -c
 	@echo Successfully created elf
 	
 elf_docker:
 	@echo 🐳 Docker mode
 	@docker compose up --build
 
-elf:
+elf: test/elf.c
 	@echo "🗜  $(Green)Creating$(Eoc) elf file"
 	@if [ $$(uname -s) = 'Linux' ]; \
 		then make elf_linux; \
 		else make elf_docker; \
 	fi
 
-.PHONY: elf_docker elf_linux
+elf_clean:
+	@echo "🗑  $(Red)Deleting$(Eoc)  elf"
+	@rm -rf elf elf.o
+
+elf_re: elf_clean elf
+
+.PHONY: elf_docker elf_linux elf_clean elf_re
