@@ -12,3 +12,4 @@ typedef struct {
 
 #include "elf/fields.h"
 #include "elf/utils.h"
+#include "elf/symbols.h"

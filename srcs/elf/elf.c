@@ -21,7 +21,7 @@ u64	get_field(const elf_t *elf, u64 off, elf_field_t field)
 	const int		elf_class = elf->class - 1;
 
 	off += field.off[elf_class];
-	if (off > elf->f->len)
+	if (off >= elf->f->len)
 	{
 		err(elf->f->path, "(out of bound)");
 		printf("out\n");
@@ -68,7 +68,7 @@ static inline byte	*get_section_name(elf_t *elf, u64 sec_off)
 	);
 }
 
-u64		get_section(elf_t *elf, const byte *name)
+u64		get_section_header(elf_t *elf, const byte *name)
 {
 	u64	sec_off = get_elf_field(elf, ELF_SHOFF);
 	u64	sec_num = get_elf_field(elf, ELF_SHNUM);
@@ -76,10 +76,19 @@ u64		get_section(elf_t *elf, const byte *name)
 	for (u64 i = 0; i < sec_num; ++i)
 	{
 		if (strsame(get_section_name(elf, sec_off), name))
-			return (get_field(elf, sec_off, SEC_OFFSET));
+			return (sec_off);
 		sec_off += SEC_HEADER.size[elf->class - 1];
 	}
 	return (0);
+}
+
+u64		get_section(elf_t *elf, const byte *name)
+{
+	u64	sec_header_off = get_section_header(elf, name);
+	
+	if (!sec_header_off)
+		return (0);
+	return (get_field(elf, sec_header_off, SEC_OFFSET));
 }
 
 static inline u64	get_shrtrtab(elf_t *elf)

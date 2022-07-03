@@ -16,14 +16,14 @@ void	nm(char *path, int show_filename)
 	if (elf == NULL)
 		goto free;
 
-	// symbols_t	*symbols = get_symbols(elf);
-	// sort_symbols(symbols);
+	symbols_t	symbols = get_symbols(elf);
+	sort_symbols(&symbols);
 
 	if (show_filename)
 		printf("\n%s:\n", f->path);
 
-	// print_symbols(symbols);
-	// free_symbols(symbols);
+	print_symbols(&symbols);
+	free_symbols(&symbols);
 
 free:
 	free(elf);

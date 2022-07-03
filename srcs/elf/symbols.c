@@ -2,26 +2,14 @@
 #include "int.h"
 #include "io.h"
 
-char	upcase(char c, int upcase)
+static inline char	upcase(char c, int upcase)
 {
 	return (c + (upcase ? ('A' - 'a') : 0));
 }
 
-typedef struct {
-	u64		value;
-	char	type;
-	byte	*name;
-}	symbol_t;
-
-typedef struct {
-	symbol_t	*ptr;
-	u64			cnt;
-}	symbols_t;
-
 // https://linux.die.net/man/1/nm
 // https://www.man7.org/linux/man-pages/man1/nm.1.html
-
-char	get_symbol_type(elf_t *elf, u64 sym_off)
+static inline char	get_symbol_type(elf_t *elf, u64 sym_off)
 {
 	int	global = ST_BIND(get_field(elf, sym_off, SYM_INFO)) & STB_GLOBAL;
 	if (get_field(elf, sym_off, SYM_SHNDX) == SHN_ABS)
@@ -53,7 +41,7 @@ char	get_symbol_type(elf_t *elf, u64 sym_off)
 	return ('?'); // unknown
 }
 
-i64		sym_cmp(byte *a, byte *b)
+static inline i64		sym_cmp(byte *a, byte *b)
 {
 	if (a == NULL || b == NULL)
 		return (a - b);
@@ -66,7 +54,60 @@ i64		sym_cmp(byte *a, byte *b)
 	return (*a - *b);
 }
 
-void	sym_sort(symbols_t *sym)
+static inline i32	sym_filter(elf_t *elf, u64 sym_off)
+{
+	if (!get_field(elf, sym_off, SYM_NAME))
+		return (0);
+	
+	if (ST_TYPE(get_field(elf, sym_off, SYM_INFO)) == STT_FILE)
+		return (0);
+
+	return (1);
+}
+
+// readelf -s elf
+static inline symbols_t	parse_elf_symbols(elf_t *elf, u64 sec_off, u64 sym_names_sec)
+{
+	u64			sym_sec_entsize = get_field(elf, sec_off, SEC_ENTSIZE);
+	u64			sym_sec_off = get_field(elf, sec_off, SEC_OFFSET) + sym_sec_entsize;
+
+	u64			cnt = (get_field(elf, sec_off, SEC_SIZE) / sym_sec_entsize) - 1;
+
+	symbols_t	sym;
+	sym.cnt = 0;
+	sym.ptr = malloc(sizeof(symbol_t) * cnt);
+
+	while (cnt--)
+	{
+		if (sym_filter(elf, sym_sec_off))
+		{
+			sym.ptr[sym.cnt].value = get_field(elf, sym_sec_off, SYM_VALUE);
+			sym.ptr[sym.cnt].type = get_symbol_type(elf, sym_sec_off);
+			sym.ptr[sym.cnt].name = elf->f->ptr + sym_names_sec + get_field(elf, sym_sec_off, SYM_NAME);
+			++sym.cnt;
+		}
+		sym_sec_off += sym_sec_entsize;
+	}
+
+	return (sym);
+}
+
+symbols_t	get_symbols(elf_t *elf)
+{
+	u64			sym_sec = get_section_header(elf, (byte *)".symtab");
+	u64			sym_names_sec = get_section(elf, (byte *)".strtab");
+
+	if (sym_sec == 0 || sym_names_sec == 0)
+	{
+		return ((symbols_t){
+			.cnt = 0,
+			.ptr = NULL
+		});
+	};
+	return (parse_elf_symbols(elf, sym_sec, sym_names_sec));
+}
+
+void	sort_symbols(symbols_t *sym)
 {
 	int	unsorted = 1;
 
@@ -86,66 +127,21 @@ void	sym_sort(symbols_t *sym)
 	}
 }
 
-// TODO filter
-i32	sym_filter(elf_t *elf, u64 sym_off)
+void	print_symbols(symbols_t *sym)
 {
-	if (get_field(elf, sym_off, SYM_SHNDX) == SHN_ABS)
-		return (0);
-	
-	return (1); // Seleted
-}
-
-// readelf -s elf
-void	parse_elf_symbols(elf_t *elf, u64 sec_off, const char *str_table_name)
-{
-	u64			sym_sec_entsize = get_field(elf, sec_off, SEC_ENTSIZE);
-	u64			sym_sec_off = get_field(elf, sec_off, SEC_OFFSET) + sym_sec_entsize;
-
-	u64			sym_names_sec = get_section(elf, (byte *)str_table_name);
-
-	u64			cnt = (get_field(elf, sec_off, SEC_SIZE) / sym_sec_entsize) - 1;
-
-	symbols_t	sym;
-	sym.cnt = 0;
-	sym.ptr = malloc(sizeof(symbol_t) * cnt);
-
-	while (cnt--)
+	for (u64 i = 0; i < sym->cnt; ++i)
 	{
-		sym.ptr[sym.cnt].value = get_field(elf, sym_sec_off, SYM_VALUE);
-		sym.ptr[sym.cnt].type = get_symbol_type(elf, sym_sec_off);
-		sym.ptr[sym.cnt].name = NULL;
-		if (get_field(elf, sym_sec_off, SYM_NAME))
-			sym.ptr[sym.cnt].name = elf->f->ptr + sym_names_sec + get_field(elf, sym_sec_off, SYM_NAME);
-
-		if (sym_filter(elf, sym_sec_off))
-			++sym.cnt;
-		sym_sec_off += sym_sec_entsize;
-	}
-
-	sym_sort(&sym);
-
-	for (u64 i = 0; i < sym.cnt; ++i)
-	{
-		if (sym.ptr[i].value)
-			printf("%016"PRIx64" ", sym.ptr[i].value);
+		if (sym->ptr[i].value)
+			printf("%016"PRIx64" ", sym->ptr[i].value);
 		else
 			printf("%16s ", "");
 
-		printf("%c %s\n", sym.ptr[i].type, sym.ptr[i].name);
+		printf("%c %s\n", sym->ptr[i].type, sym->ptr[i].name);
 	}
-	// puts("");
 }
 
-void	parse_elf_sections(elf_t *elf)
+
+void	free_symbols(symbols_t *sym)
 {
-
-	u64	sec_off = get_elf_field(elf, ELF_SHOFF);
-	u64	sec_num = get_elf_field(elf, ELF_SHNUM);
-
-	for (u64 i = 0; i < sec_num; ++i)
-	{
-		if (get_field(elf, sec_off, SEC_TYPE) == SymbolTable)
-			parse_elf_symbols(elf, sec_off, ".strtab");
-		sec_off += SEC_HEADER.size[elf->class - 1];
-	}
+	free(sym->ptr);
 }

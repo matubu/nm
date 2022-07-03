@@ -1,6 +1,6 @@
 Name = ft_nm
-Srcs = $(wildcard srcs/*.c)
-Deps = $(wildcard incs/*.h) Makefile
+Srcs = $(shell find srcs -type f -name '*.c')
+Deps = $(shell find incs -type f -name '*.h') Makefile
 Objs = $(Srcs:srcs/%.c=bin/%.o)
 
 Incs = -I incs
@@ -20,7 +20,7 @@ run: all elf
 
 bin/%.o: srcs/%.c $(Deps)
 	@echo "🔧 $(Green)Compiling$(Eoc) $(notdir $<)"
-	@mkdir -p bin
+	@mkdir -p $(dir $@)
 	@gcc $(Flag) -c $< -o $@
 
 $(Name): $(Objs)
