@@ -152,7 +152,7 @@ void	parse_elf_symbols(elf_t *elf, u64 sec_off, const char *str_table_name)
 	{
 		u64	value = get_field(elf, sym_sec_off, SYM_VALUE);
 		if (value)
-			printf("%016lx ", value);
+			printf("%016"PRId64"x ", value);
 		else
 			printf("%16s ", "");
 

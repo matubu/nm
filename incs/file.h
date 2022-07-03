@@ -5,7 +5,7 @@
 typedef struct {
 	char	*path;
 	byte	*ptr;
-	size_t	len;
+	usize	len;
 }	file_t;
 
 void	free_file(file_t *s);

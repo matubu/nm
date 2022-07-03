@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 
-static inline file_t	*new_file_t(char *path, byte *ptr, size_t len)
+static inline file_t	*new_file_t(char *path, byte *ptr, usize len)
 {
 	file_t	*f = malloc(sizeof(file_t));
 	if (f == NULL)
@@ -52,7 +52,7 @@ file_t	*read_file(char *path)
 int	starts_with(const file_t *f, byte *p)
 {
 	printf("starts_with(%x, %x)\n", *f->ptr, *p);
-	for (size_t i = 0; p[i]; ++i)
+	for (usize i = 0; p[i]; ++i)
 		if (i >= f->len || p[i] != f->ptr[i])
 			return (0);
 	return (1);

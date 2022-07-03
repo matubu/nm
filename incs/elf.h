@@ -4,8 +4,8 @@
 #include "file.h"
 
 typedef struct {
-	size_t	off[2];  // [ off32 , off64  ]
-	size_t	size[2]; // [ size32, size64 ]
+	usize	off[2];  // [ off32 , off64  ]
+	usize	size[2]; // [ size32, size64 ]
 }	elf_field_t;
 
 typedef struct {
