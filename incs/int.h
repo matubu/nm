@@ -16,3 +16,7 @@ typedef int32_t		i32;
 typedef uint64_t	usize;
 typedef uint64_t	u64;
 typedef int64_t		i64;
+
+typedef	int			bool;
+#define false		0
+#define true		1

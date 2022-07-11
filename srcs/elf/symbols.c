@@ -7,17 +7,36 @@ static inline char	upcase(char c, int upcase)
 	return (c + (upcase ? ('A' - 'a') : 0));
 }
 
+static inline bool is_in_section(elf_t *elf, u64 sym_off, char *sec_name)
+{
+	u64 sym_addr = get_field(elf, sym_off, SYM_VALUE);
+
+	u64 sec_header = get_section_header(elf, (byte *)sec_name);
+	if (sec_header == 0)
+		return (false);
+	u64 sec_start = get_field(elf, sec_header, SEC_ADDR);
+	u64 sec_size = get_field(elf, sec_header, SEC_SIZE);
+	u64 sec_end = sec_start + sec_size;
+
+	return (sym_addr >= sec_start && sym_addr < sec_end);
+}
+
 // https://linux.die.net/man/1/nm
 // https://www.man7.org/linux/man-pages/man1/nm.1.html
+// http://flint.cs.yale.edu/cs422/doc/ELF_Format.pdf
+// TODO finish this
 static inline char	get_symbol_type(elf_t *elf, u64 sym_off)
 {
-	int	global = ST_BIND(get_field(elf, sym_off, SYM_INFO)) & STB_GLOBAL;
+	int	isglobal = ST_BIND(get_field(elf, sym_off, SYM_INFO)) & STB_GLOBAL;
+
 	if (get_field(elf, sym_off, SYM_SHNDX) == SHN_ABS)
 		return ('A'); // absolute
-	// return (upcase('b', global)); // in uninitialized data section (bss)
+	// if (is_in_section(elf, sym_off, ".bss"))
+	// 	return (upcase('b', isglobal)); // in uninitialized data section (bss)
 	if (get_field(elf, sym_off, SYM_SHNDX) == SHN_COMMON)
-		return (upcase('c', global)); // common
-	// return (upcase('d', global)); // in the data section
+		return (upcase('c', isglobal)); // common
+	// if (is_in_section(elf, sym_off, ".data"))
+	// 	return (upcase('d', isglobal)); // in the data section
 	// return (upcase('g', global)); // in a data section for small objects
 	// return ('i'); // in a section specific to the implementation of DLLs
 	// return ('I'); // an indirect reference to another symbol
@@ -31,9 +50,9 @@ static inline char	get_symbol_type(elf_t *elf, u64 sym_off)
 	if (ST_BIND(get_field(elf, sym_off, SYM_INFO)) & STB_WEAK)
 	{
 		if (ST_TYPE(get_field(elf, sym_off, SYM_INFO)) & STT_OBJECT)
-			return (upcase('v', global)); // is a weak object
+			return (upcase('v', isglobal)); // is a weak object
 		else
-			return (upcase('w', global)); // is a weak symbol
+			return (upcase('w', isglobal)); // is a weak symbol
 	}
 	if (get_field(elf, sym_off, SYM_SHNDX) == SHN_UNDEF)
 		return ('U'); // is undefined
@@ -109,11 +128,11 @@ symbols_t	get_symbols(elf_t *elf)
 
 void	sort_symbols(symbols_t *sym)
 {
-	int	unsorted = 1;
+	bool	sorted = false;
 
-	while (unsorted)
+	while (!sorted)
 	{
-		unsorted = 0;
+		sorted = true;
 		for (u64 i = 1; i < sym->cnt; ++i)
 		{
 			if (sym_cmp(sym->ptr[i-1].name, sym->ptr[i].name) > 0)
@@ -121,7 +140,7 @@ void	sort_symbols(symbols_t *sym)
 				symbol_t	tmp = sym->ptr[i];
 				sym->ptr[i] = sym->ptr[i-1];
 				sym->ptr[i-1] = tmp;
-				unsorted = 1;
+				sorted = false;
 			}
 		}
 	}

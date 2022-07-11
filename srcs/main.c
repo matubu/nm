@@ -1,7 +1,7 @@
 #include <unistd.h>
-#include <stdlib.h>
 #include <sys/mman.h>
 
+#include "malloc.h"
 #include "io.h"
 #include "elf/elf.h"
 #include "file.h"
@@ -32,6 +32,7 @@ free:
 
 int	main(int argc, char **argv)
 {
+	// TODO flags
 	for (int i = 1; i < argc; ++i)
 		nm(argv[i], argc > 2);
 }

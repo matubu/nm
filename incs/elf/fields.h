@@ -1,7 +1,6 @@
 #pragma once
 
-#include <stdlib.h>
-
+#include "malloc.h"
 #include "int.h"
 
 typedef struct {

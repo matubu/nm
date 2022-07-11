@@ -40,7 +40,7 @@ u64	get_field(const elf_t *elf, u64 off, elf_field_t field)
 
 	if (off >= 0x10 && CurrentEndian != elf->endian)
 	{
-		// TODO test
+		// TODO test this
 		// TODO check every offset, non-null string
 		printf("Swap endian\n");
 		masked = swap_endianess(masked);
@@ -110,11 +110,7 @@ elf_t	*elf_from_string(const file_t *f)
 		return (NULL); \
 	}
 
-	elf_t	*elf;
-
-	elf = malloc(sizeof(elf_t));
-	if (elf == NULL)
-		return (NULL);
+	elf_t	*elf = malloc(sizeof(elf_t));
 
 	elf->f = f;
 	elf->class = 1;
@@ -142,7 +138,6 @@ elf_t	*elf_from_string(const file_t *f)
 		invalid_elf(elf, "unsupported elf version");
 
 	elf->shrtrtab = get_shrtrtab(elf);
-	// parse_elf_sections(elf);
 
 	return (elf);
 }
