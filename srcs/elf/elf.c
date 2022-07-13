@@ -23,8 +23,8 @@ u64	get_field(const elf_t *elf, u64 off, elf_field_t field)
 	off += field.off[elf_class];
 	if (off >= elf->f->len)
 	{
+		// TODO better error handling
 		err(elf->f->path, "(out of bound)");
-		printf("out\n");
 		return (0);
 	}
 
@@ -40,7 +40,7 @@ u64	get_field(const elf_t *elf, u64 off, elf_field_t field)
 
 	if (off >= 0x10 && CurrentEndian != elf->endian)
 	{
-		// TODO test this
+		// TODO test on different endianess
 		// TODO check every offset, non-null string
 		printf("Swap endian\n");
 		masked = swap_endianess(masked);

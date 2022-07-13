@@ -28,6 +28,8 @@ static inline bool is_in_section(elf_t *elf, u64 sym_off, char *sec_name)
 static inline char	get_symbol_type(elf_t *elf, u64 sym_off)
 {
 	int	global = SYM_BIND(get_field(elf, sym_off, SYM_INFO)) & SYM_BIND_GLOBAL;
+	// int	rel = get_field(elf, sym_sec_off, SYM_REL);
+
 
 	if (get_field(elf, sym_off, SYM_REL) == SYM_REL_ABS)
 		return ('A'); // absolute

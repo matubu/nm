@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 #include "malloc.h"
 #include "int.h"
 
@@ -14,6 +16,30 @@ typedef struct {
 }	mask_mapping_t;
 
 #define GET_STRING_MAPPING(arr, n) n >= (sizeof(arr) / sizeof(arr[0])) ? NULL : arr[n]
+
+// Data Representation
+// https://docs.oracle.com/cd/E23824_01/html/819-0690/chapter7-6.html#scrolltoc
+typedef uint32_t Elf32_Addr;
+typedef uint16_t Elf32_Half;
+typedef uint32_t Elf32_Off;
+typedef uint32_t Elf32_Sword;
+typedef uint32_t Elf32_Word;
+
+typedef uint64_t Elf64_Addr;
+typedef uint16_t Elf64_Half;
+typedef uint64_t Elf64_Off;
+typedef uint32_t Elf64_Sword;
+typedef uint32_t Elf64_Word;
+typedef uint64_t Elf64_Xword;
+typedef uint64_t Elf64_Sxword;
+
+
+// Macro to create elf_field_t data from struct
+#define sizeofmember(type, member) (sizeof(((type*)0)->member))
+#define DEFINE_FIELD(type32, type64, member) ((elf_field_t) { \
+	{offsetof(type32, member), offsetof(type64, member)}, \
+	{sizeofmember(type32, member), sizeofmember(type64, member)} \
+})
 
 // https://refspecs.linuxbase.org/elf/elf.pdf
 
@@ -280,26 +306,35 @@ extern const mask_mapping_t	sec_flags[];
 // https://docs.oracle.com/cd/E23824_01/html/819-0690/chapter6-79797.html
 // https://blog.k3170makan.com/2018/10/introduction-to-elf-format-part-vi.html
 
-#define SYM_NAME ((elf_field_t) { \
-	{0x0, 0x0}, \
-	{4, 4} \
-}) // Offset string in string table can be NULL
+typedef struct {
+	Elf32_Word      st_name;
+	Elf32_Addr      st_value;
+	Elf32_Word      st_size;
+	unsigned char   st_info;
+	unsigned char   st_other;
+	Elf32_Half      st_shndx;
+} Elf32_Sym;
 
-#define SYM_VALUE ((elf_field_t) { \
-	{0x4, 0x8}, \
-	{4, 8} \
-}) // Can be an absolute value, an address, and so forth. See https://docs.oracle.com/cd/E19683-01/816-1386/6m7qcoblj/index.html#chapter6-35166
+typedef struct {
+	Elf64_Word      st_name;
+	unsigned char   st_info;
+	unsigned char   st_other;
+	Elf64_Half      st_shndx;
+	Elf64_Addr      st_value;
+	Elf64_Xword     st_size;
+} Elf64_Sym;
 
-#define SYM_SIZE ((elf_field_t) { \
-	{0x8, 0x10}, \
-	{4, 8} \
-}) // Can be the number of bytes contained in the object. If this member holds 0 the symbol has no size or an unknown size
+// Offset string in string table can be NULL
+#define SYM_NAME  DEFINE_FIELD(Elf32_Sym, Elf64_Sym, st_name)
 
+// Can be an absolute value, an address, and so forth. See https://docs.oracle.com/cd/E19683-01/816-1386/6m7qcoblj/index.html#chapter6-35166
+#define SYM_VALUE  DEFINE_FIELD(Elf32_Sym, Elf64_Sym, st_value)
 
-#define SYM_INFO ((elf_field_t) { \
-	{0xC, 0x4}, \
-	{1, 1} \
-}) // The symbol's type and binding attributes
+// Can be the number of bytes contained in the object. If this member holds 0 the symbol has no size or an unknown size
+#define SYM_SIZE  DEFINE_FIELD(Elf32_Sym, Elf64_Sym, st_size)
+
+// The symbol's type and binding attributes
+#define SYM_INFO  DEFINE_FIELD(Elf32_Sym, Elf64_Sym, st_info)
 
 // https://docs.oracle.com/cd/E23824_01/html/819-0690/chapter6-79797.html
 // https://blog.k3170makan.com/2018/10/introduction-to-elf-format-part-vi.html
@@ -323,16 +358,12 @@ extern const mask_mapping_t	sec_flags[];
 #define SYM_TYPE_TLS		6 // thread local entity
 
 
-#define SYM_OTHER ((elf_field_t) { \
-	{0xD, 0x5}, \
-	{1, 1} \
-}) // The symbol's visibility (mask 0x3)
+// The symbol's visibility (mask 0x3)
+#define SYM_OTHER  DEFINE_FIELD(Elf32_Sym, Elf64_Sym, st_other)
 
 // standard name: st_shndx (section header index)
-#define SYM_REL ((elf_field_t) { \
-	{0xE, 0x6}, \
-	{2, 4} \
-}) // This member holds the relevant section header table index
+// This member holds the relevant section header table index
+#define SYM_REL  DEFINE_FIELD(Elf32_Sym, Elf64_Sym, st_shndx)
 
 // https://docs.oracle.com/cd/E19683-01/817-3677/chapter6-94076/index.html
 // standard name: SHN_ (section header index)
