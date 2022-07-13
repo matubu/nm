@@ -259,6 +259,11 @@ extern const char	*sec_type[];
 	{4, 8} \
 }) // Identifies the attributes of the section
 extern const mask_mapping_t	sec_flags[];
+// https://docs.oracle.com/cd/E37838_01/html/E61063/elf-23207.html
+// standard name: SHF_
+#define SEC_FLAG_WRITE 0x1
+#define SEC_FLAG_ALLOC 0x2
+#define SEC_FLAG_EXECINSTR 0x4
 
 #define SEC_ADDR ((elf_field_t) { \
 	{0xC, 0x10}, \

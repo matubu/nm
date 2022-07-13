@@ -39,27 +39,21 @@ re: fclean all
 
 .PHONY: all run clean fclean re
 
-elf_linux:
-	@echo 🐧 Linux mode
-	@gcc test/elf.c -o elf
-	@gcc test/elf.c -o elf.o -c
-	@echo Successfully created elf
-	
-elf_docker:
-	@echo 🐳 Docker mode
-	@docker compose up --build
-
-elf: test/elf.c
+elf%: test/elf%.c
 	@echo "🗜  $(Green)Creating$(Eoc) elf file"
 	@if [ $$(uname -s) = 'Linux' ]; \
-		then make elf_linux; \
-		else make elf_docker; \
+		then \
+			echo 🐧 Linux mode; \
+			gcc $^ -o $@; \
+		else \
+			echo 🐳 Docker mode; \
+			docker compose up --build; \
 	fi
 
 elf_clean:
 	@echo "🗑  $(Red)Deleting$(Eoc)  elf"
-	@rm -rf elf elf.o
+	@rm -rf elf* elf.o
 
 elf_re: elf_clean elf
 
-.PHONY: elf_docker elf_linux elf_clean elf_re
+.PHONY: elf_clean elf_re

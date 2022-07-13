@@ -1,5 +1,3 @@
-// This file will be compiled to generate a elf for testing
-
 #include <stdio.h>
 
 int	add(int a, int b)

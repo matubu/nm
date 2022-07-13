@@ -49,23 +49,22 @@ u64	get_field(const elf_t *elf, u64 off, elf_field_t field)
 	return (masked);
 }
 
-static inline int strsame(const byte *a, const byte *b)
+byte	*get_section_name(elf_t *elf, u64 sec_off)
 {
-	while (*a && *a == *b)
-	{
-		++a;
-		++b;
-	}
-	return (*a == *b);
-}
-
-static inline byte	*get_section_name(elf_t *elf, u64 sec_off)
-{
+	if (sec_off == 0)
+		return (NULL);
 	return (
 		elf->f->ptr
 		+ elf->shrtrtab
 		+ get_field(elf, sec_off, SEC_NAME)
 	);
+}
+
+u64		get_section_header_from_idx(elf_t *elf, u64 idx)
+{
+	u64	sec_off = get_elf_field(elf, ELF_SHOFF);
+
+	return (sec_off + SEC_HEADER.size[elf->class - 1] * idx);
 }
 
 u64		get_section_header(elf_t *elf, const byte *name)

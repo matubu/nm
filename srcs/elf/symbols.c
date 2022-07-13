@@ -7,57 +7,58 @@ static inline char	upcase(char c, int upcase)
 	return (c + (upcase ? ('A' - 'a') : 0));
 }
 
-static inline bool is_in_section(elf_t *elf, u64 sym_off, char *sec_name)
-{
-	u64 sym_addr = get_field(elf, sym_off, SYM_VALUE);
-
-	u64 sec_header = get_section_header(elf, (byte *)sec_name);
-	if (sec_header == 0)
-		return (false);
-	u64 sec_start = get_field(elf, sec_header, SEC_ADDR);
-	u64 sec_size = get_field(elf, sec_header, SEC_SIZE);
-	u64 sec_end = sec_start + sec_size;
-
-	return (sym_addr >= sec_start && sym_addr < sec_end);
-}
-
 // https://linux.die.net/man/1/nm
 // https://www.man7.org/linux/man-pages/man1/nm.1.html
 // http://flint.cs.yale.edu/cs422/doc/ELF_Format.pdf
+// https://stackoverflow.com/questions/15225346/how-to-display-the-symbols-type-like-the-nm-command
+// https://github.com/bhm-heddy/42Project_nm_elf/blob/main/srcs/flags.c
+// https://medium.com/a-42-journey/nm-otool-everything-you-need-to-know-to-build-your-own-7d4fef3d7507
 // TODO finish this
 static inline char	get_symbol_type(elf_t *elf, u64 sym_off)
 {
-	int	global = SYM_BIND(get_field(elf, sym_off, SYM_INFO)) & SYM_BIND_GLOBAL;
-	// int	rel = get_field(elf, sym_sec_off, SYM_REL);
+	bool	global = (SYM_BIND(get_field(elf, sym_off, SYM_INFO)) & SYM_BIND_GLOBAL) ? true : false;
+	u64		sym_type = SYM_TYPE(get_field(elf, sym_off, SYM_INFO));
+	u64		rel = get_field(elf, sym_off, SYM_REL);
 
 
-	if (get_field(elf, sym_off, SYM_REL) == SYM_REL_ABS)
+
+	if (SYM_BIND(get_field(elf, sym_off, SYM_INFO)) & SYM_BIND_WEAK)
+	{
+		if (sym_type & SYM_TYPE_OBJECT)
+			return (upcase('v', global)); // is a weak object
+		else
+			return (upcase('w', global)); // is a weak symbol
+	}
+
+	if (rel == SYM_REL_ABS)
 		return ('A'); // absolute
-	// if (is_in_section(elf, sym_off, ".bss"))
-	// 	return (upcase('b', global)); // in uninitialized data section (bss)
-	if (get_field(elf, sym_off, SYM_REL) == SYM_REL_COMMON)
+	if (rel == SYM_REL_COMMON)
 		return (upcase('c', global)); // common
-	// if (is_in_section(elf, sym_off, ".data"))
-	// 	return (upcase('d', global)); // in the data section
+	if (rel == SYM_REL_UNDEF)
+		return ('U'); // is undefined
+
+	u64		rel_off = get_section_header_from_idx(elf, rel);
+	u64		rel_type = get_field(elf, rel_off, SEC_TYPE);
+	u64		rel_flags = get_field(elf, rel_off, SEC_FLAGS);
+	// byte	*rel_name = get_section_name(elf, rel_off);
+
+	// printf("stt=%ld type=%ld flags=%ld name=%s ", sym_type, rel_type, rel_flags, rel_name);
+	if (rel_type == SEC_TYPE_NOBITS && rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_WRITE))
+		return (upcase('b', global)); // in uninitialized data section (bss)
 	// return (upcase('g', global)); // in a data section for small objects
 	// return ('i'); // in a section specific to the implementation of DLLs
 	// return ('I'); // an indirect reference to another symbol
 	// return ('N'); // a debugging symbol
 	// return ('n'); // in the read-only data section
 	// return ('p'); // in a stack unwind section
-	// return (upcase('r', global)); // in a read only data section
+	if ((rel_type == SEC_TYPE_PROGBITS || rel_type == SEC_TYPE_NOTE) && rel_flags == SEC_FLAG_ALLOC)
+		return (upcase('r', global)); // in a read only data section
 	// return (upcase('s', global)); // in a data section for small objects (same as g ?)
-	// return (upcase('t', global)); // in text (code) section
+	if (rel_type == SEC_TYPE_PROGBITS && rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_EXECINSTR))
+		return (upcase('t', global)); // in text (code) section
 	// return ('u'); // a unique global symbol
-	if (SYM_BIND(get_field(elf, sym_off, SYM_INFO)) & SYM_BIND_WEAK)
-	{
-		if (SYM_TYPE(get_field(elf, sym_off, SYM_INFO)) & SYM_TYPE_OBJECT)
-			return (upcase('v', global)); // is a weak object
-		else
-			return (upcase('w', global)); // is a weak symbol
-	}
-	if (get_field(elf, sym_off, SYM_REL) == SYM_REL_UNDEF)
-		return ('U'); // is undefined
+	if (rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_WRITE))
+		return (upcase('d', global)); // in the data section
 	// return ('-'); // is a stabs symbol in an a.out object file
 	return ('?'); // unknown
 }
@@ -105,6 +106,7 @@ static inline symbols_t	parse_elf_symbols(elf_t *elf, u64 sec_off, u64 sym_names
 			sym.ptr[sym.cnt].value = get_field(elf, sym_sec_off, SYM_VALUE);
 			sym.ptr[sym.cnt].type = get_symbol_type(elf, sym_sec_off);
 			sym.ptr[sym.cnt].name = elf->f->ptr + sym_names_sec + get_field(elf, sym_sec_off, SYM_NAME);
+			// printf("(%s)\n", sym.ptr[sym.cnt].name);
 			++sym.cnt;
 		}
 		sym_sec_off += sym_sec_entsize;
