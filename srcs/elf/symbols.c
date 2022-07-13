@@ -21,7 +21,6 @@ static inline char	get_symbol_type(elf_t *elf, u64 sym_off)
 	u64		rel = get_field(elf, sym_off, SYM_REL);
 
 
-
 	if (SYM_BIND(get_field(elf, sym_off, SYM_INFO)) & SYM_BIND_WEAK)
 	{
 		if (sym_type & SYM_TYPE_OBJECT)
@@ -40,16 +39,14 @@ static inline char	get_symbol_type(elf_t *elf, u64 sym_off)
 	u64		rel_off = get_section_header_from_idx(elf, rel);
 	u64		rel_type = get_field(elf, rel_off, SEC_TYPE);
 	u64		rel_flags = get_field(elf, rel_off, SEC_FLAGS);
-	// byte	*rel_name = get_section_name(elf, rel_off);
 
-	// printf("stt=%ld type=%ld flags=%ld name=%s ", sym_type, rel_type, rel_flags, rel_name);
 	if (rel_type == SEC_TYPE_NOBITS && rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_WRITE))
 		return (upcase('b', global)); // in uninitialized data section (bss)
 	// return (upcase('g', global)); // in a data section for small objects
-	// return ('i'); // in a section specific to the implementation of DLLs
 	// return ('I'); // an indirect reference to another symbol
 	// return ('N'); // a debugging symbol
-	// return ('n'); // in the read-only data section
+	if (rel_type == SHT_PROGBITS && rel_flags == 0)
+		return ('n'); // in the read-only data section
 	// return ('p'); // in a stack unwind section
 	if ((rel_type == SEC_TYPE_PROGBITS || rel_type == SEC_TYPE_NOTE) && rel_flags == SEC_FLAG_ALLOC)
 		return (upcase('r', global)); // in a read only data section
@@ -59,6 +56,8 @@ static inline char	get_symbol_type(elf_t *elf, u64 sym_off)
 	// return ('u'); // a unique global symbol
 	if (rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_WRITE))
 		return (upcase('d', global)); // in the data section
+	if (rel_type == SEC_TYPE_PROGBITS && rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_EXECINSTR))
+		return ('i'); // in a section specific to the implementation of DLLs
 	// return ('-'); // is a stabs symbol in an a.out object file
 	return ('?'); // unknown
 }
@@ -106,7 +105,6 @@ static inline symbols_t	parse_elf_symbols(elf_t *elf, u64 sec_off, u64 sym_names
 			sym.ptr[sym.cnt].value = get_field(elf, sym_sec_off, SYM_VALUE);
 			sym.ptr[sym.cnt].type = get_symbol_type(elf, sym_sec_off);
 			sym.ptr[sym.cnt].name = elf->f->ptr + sym_names_sec + get_field(elf, sym_sec_off, SYM_NAME);
-			// printf("(%s)\n", sym.ptr[sym.cnt].name);
 			++sym.cnt;
 		}
 		sym_sec_off += sym_sec_entsize;
