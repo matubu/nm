@@ -27,16 +27,16 @@ static inline bool is_in_section(elf_t *elf, u64 sym_off, char *sec_name)
 // TODO finish this
 static inline char	get_symbol_type(elf_t *elf, u64 sym_off)
 {
-	int	isglobal = ST_BIND(get_field(elf, sym_off, SYM_INFO)) & STB_GLOBAL;
+	int	global = SYM_BIND(get_field(elf, sym_off, SYM_INFO)) & SYM_BIND_GLOBAL;
 
-	if (get_field(elf, sym_off, SYM_SHNDX) == SHN_ABS)
+	if (get_field(elf, sym_off, SYM_REL) == SYM_REL_ABS)
 		return ('A'); // absolute
 	// if (is_in_section(elf, sym_off, ".bss"))
-	// 	return (upcase('b', isglobal)); // in uninitialized data section (bss)
-	if (get_field(elf, sym_off, SYM_SHNDX) == SHN_COMMON)
-		return (upcase('c', isglobal)); // common
+	// 	return (upcase('b', global)); // in uninitialized data section (bss)
+	if (get_field(elf, sym_off, SYM_REL) == SYM_REL_COMMON)
+		return (upcase('c', global)); // common
 	// if (is_in_section(elf, sym_off, ".data"))
-	// 	return (upcase('d', isglobal)); // in the data section
+	// 	return (upcase('d', global)); // in the data section
 	// return (upcase('g', global)); // in a data section for small objects
 	// return ('i'); // in a section specific to the implementation of DLLs
 	// return ('I'); // an indirect reference to another symbol
@@ -47,14 +47,14 @@ static inline char	get_symbol_type(elf_t *elf, u64 sym_off)
 	// return (upcase('s', global)); // in a data section for small objects (same as g ?)
 	// return (upcase('t', global)); // in text (code) section
 	// return ('u'); // a unique global symbol
-	if (ST_BIND(get_field(elf, sym_off, SYM_INFO)) & STB_WEAK)
+	if (SYM_BIND(get_field(elf, sym_off, SYM_INFO)) & SYM_BIND_WEAK)
 	{
-		if (ST_TYPE(get_field(elf, sym_off, SYM_INFO)) & STT_OBJECT)
-			return (upcase('v', isglobal)); // is a weak object
+		if (SYM_TYPE(get_field(elf, sym_off, SYM_INFO)) & SYM_TYPE_OBJECT)
+			return (upcase('v', global)); // is a weak object
 		else
-			return (upcase('w', isglobal)); // is a weak symbol
+			return (upcase('w', global)); // is a weak symbol
 	}
-	if (get_field(elf, sym_off, SYM_SHNDX) == SHN_UNDEF)
+	if (get_field(elf, sym_off, SYM_REL) == SYM_REL_UNDEF)
 		return ('U'); // is undefined
 	// return ('-'); // is a stabs symbol in an a.out object file
 	return ('?'); // unknown
@@ -78,7 +78,7 @@ static inline i32	sym_filter(elf_t *elf, u64 sym_off)
 	if (!get_field(elf, sym_off, SYM_NAME))
 		return (0);
 	
-	if (ST_TYPE(get_field(elf, sym_off, SYM_INFO)) == STT_FILE)
+	if (SYM_TYPE(get_field(elf, sym_off, SYM_INFO)) == SYM_TYPE_FILE)
 		return (0);
 
 	return (1);

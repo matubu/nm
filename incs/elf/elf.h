@@ -9,7 +9,6 @@ typedef struct {
 	u64				shrtrtab;
 }	elf_t;
 
-
 #include "elf/fields.h"
 #include "elf/utils.h"
 #include "elf/symbols.h"

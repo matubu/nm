@@ -15,10 +15,6 @@ typedef struct {
 
 #define GET_STRING_MAPPING(arr, n) n >= (sizeof(arr) / sizeof(arr[0])) ? NULL : arr[n]
 
-#define LittleEndian 1
-#define BigEndian 2
-#define CurrentEndian (2 - *(char *)((int []){1}) == 1)
-
 // https://refspecs.linuxbase.org/elf/elf.pdf
 
 // File header
@@ -34,6 +30,12 @@ typedef struct {
 	{0x4, 0x4}, \
 	{1, 1} \
 })
+
+#define LittleEndian 1
+#define BigEndian 2
+// https://www.embeddedsoft.net/simple-code-to-find-endianness-in-c/
+#define CurrentEndian (2 - *(char *)((int []){1}) == 1)
+
 extern const char	*elf_class[];
 
 #define ELF_DATA ((elf_field_t) { \
@@ -190,14 +192,41 @@ extern const char	*prog_type[];
 	{4, 4} \
 }) // An offset to a string in the .shstrtab section that represents the name of this section
 
+// standard name: sh_type
 #define SEC_TYPE ((elf_field_t) { \
 	{0x4, 0x4}, \
 	{4, 4} \
 }) // Identifies the type of this header
 extern const char	*sec_type[];
-#define SymbolTable              2
-#define SymbolHashTable          5
-#define DynamicLinkerSymbolTable 11
+// https://docs.oracle.com/cd/E19683-01/817-3677/chapter6-94076/index.html
+// standard name: SHT_
+#define SEC_TYPE_NULL			0 // Identifies the section header as inactive
+#define SEC_TYPE_PROGBITS		1 // Identifies information defined by the program
+#define SEC_TYPE_SYMTAB			2 // Identifies a symbol table
+#define SEC_TYPE_STRTAB			3 // Identifies a string table
+#define SEC_TYPE_RELA			4 // Identifies relocation entries with explicit addends
+#define SEC_TYPE_HASH			5 // Identifies a symbol hash table
+#define SEC_TYPE_DYNAMIC		6 // Identifies information for dynamic linking
+#define SEC_TYPE_NOTE			7 // Identifies information that marks the file in some way
+#define SEC_TYPE_NOBITS			8 // Identifies a section that occupies no space in the file but otherwise resembles SHT_PROGBITS
+#define SEC_TYPE_REL			9 // Identifies relocation entries without explicit addends
+#define SEC_TYPE_SHLIB			10 // Identifies a reserved section which has unspecified semantics
+#define SEC_TYPE_DYNSYM			11 // Identifies a section containing an array of pointers to initialization functions
+#define SEC_TYPE_INIT_ARRAY		14 // Identifies a section containing an array of pointers to initialization functions
+#define SEC_TYPE_FINI_ARRAY		15 // Identifies a section containing an array of pointers to termination functions
+#define SEC_TYPE_PREINIT_ARRAY	16 // Identifies a section containing an array of pointers to functions that are invoked before all other initialization functions
+#define SEC_TYPE_GROUP			17 // Identifies a section group
+#define SEC_TYPE_SYMTAB_SHNDX	18 // Identifies a section containing extended section indexes
+
+#define SEC_TYPE_SUNW_DEBUGSTR	0x6ffffff8 // Identifies debugging information
+#define SEC_TYPE_SUNW_DEBUG		0x6ffffff9
+
+#define SEC_TYPE_SUNW_move		0x6ffffffa // Identifies data to handle partially initialized symbols
+#define SEC_TYPE_SUNW_COMDAT	0x6ffffffb // Identifies a section that allows multiple copies of the same data to be reduced to a single copy
+#define SEC_TYPE_SUNW_syminfo	0x6ffffffc // Identifies additional symbol information
+#define SEC_TYPE_SUNW_verdef	0x6ffffffd // Identifies fine-grained versions defined by this file
+#define SEC_TYPE_SUNW_verneed	0x6ffffffe // Identifies fine-grained dependencies required by this file
+#define SEC_TYPE_SUNW_versym	0x6fffffff // Identifies a table describing the relationship of symbols to the version definitions offered by the file
 
 #define SEC_FLAGS ((elf_field_t) { \
 	{0x8, 0x8}, \
@@ -266,6 +295,7 @@ extern const mask_mapping_t	sec_flags[];
 	{4, 8} \
 }) // Can be the number of bytes contained in the object. If this member holds 0 the symbol has no size or an unknown size
 
+
 #define SYM_INFO ((elf_field_t) { \
 	{0xC, 0x4}, \
 	{1, 1} \
@@ -273,34 +303,53 @@ extern const mask_mapping_t	sec_flags[];
 
 // https://docs.oracle.com/cd/E23824_01/html/819-0690/chapter6-79797.html
 // https://blog.k3170makan.com/2018/10/introduction-to-elf-format-part-vi.html
-#define ST_BIND(info) ((info) >> 4)
-#define STB_LOCAL	0
-#define STB_GLOBAL	1
-#define STB_WEAK	2
-
-
-#define ST_TYPE(info) ((info) & 0xf)
+// standard name: ST_BIND
+#define SYM_BIND(info)		((info) >> 4)
+// standard name: STB (symbol type bind)
+#define SYM_BIND_LOCAL		0
+#define SYM_BIND_GLOBAL		1
+#define SYM_BIND_WEAK		2
 
 // https://docs.oracle.com/cd/E23824_01/html/819-0690/chapter6-79797.html
-#define STT_NOTYPE			0 // type not defined
-#define STT_OBJECT			1 // data object (variables, arrays...)
-#define STT_FUNC			2 // function
-#define STT_SECTION			3 // section
-#define STT_FILE			4 // file
-#define STT_COMMON			5 // common block (same as STT_OBJECT)
-#define STT_TLS				6 // thread local entity
+// standard name: ST_TYPE
+#define SYM_TYPE(info)		((info) & 0xf)
+// standard name: STT_ (symbol type type)
+#define SYM_TYPE_NOTYPE		0 // type not defined
+#define SYM_TYPE_OBJECT		1 // data object (variables, arrays...)
+#define SYM_TYPE_FUNC		2 // function
+#define SYM_TYPE_SECTION	3 // section
+#define SYM_TYPE_FILE		4 // file
+#define SYM_TYPE_COMMON		5 // common block (same as SYM_TYPE_OBJECT)
+#define SYM_TYPE_TLS		6 // thread local entity
+
 
 #define SYM_OTHER ((elf_field_t) { \
 	{0xD, 0x5}, \
 	{1, 1} \
 }) // The symbol's visibility (mask 0x3)
 
-#define SYM_SHNDX ((elf_field_t) { \
+// standard name: st_shndx (section header index)
+#define SYM_REL ((elf_field_t) { \
 	{0xE, 0x6}, \
 	{2, 4} \
 }) // This member holds the relevant section header table index
 
-#define SHN_UNDEF 0
-#define SHN_ABS 0xfff1
-#define SHN_COMMON 0xfff2
-#define SHN_XINDEX 0xffff
+// https://docs.oracle.com/cd/E19683-01/817-3677/chapter6-94076/index.html
+// standard name: SHN_ (section header index)
+
+// An undefined, missing, irrelevant, or otherwise meaningless section reference.
+// For example, a symbol defined relative to section number SHN_UNDEF is an undefined symbol.
+#define SYM_REL_UNDEF  0x0
+
+// Absolute values for the corresponding reference.
+// For example, symbols defined relative to section number SHN_ABS have absolute values and are not affected by relocation.
+#define SYM_REL_ABS    0xfff1
+
+// Symbols defined relative to this section are common symbols,
+// such as FORTRAN COMMON or unallocated C external variables.
+// These symbols are sometimes referred to as tentative
+#define SYM_REL_COMMON 0xfff2
+
+// An escape value indicating that the actual section header index is too large to fit in the containing field.
+// The header section index is found in another location specific to the structure where it appears.
+#define SYM_REL_XINDEX 0xffff
