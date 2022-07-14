@@ -349,6 +349,9 @@ typedef struct {
 #define SYM_BIND_LOCAL		0
 #define SYM_BIND_GLOBAL		1
 #define SYM_BIND_WEAK		2
+// -fno-gnu-unique in https://gcc.gnu.org/onlinedocs/gcc-9.1.0/gcc/Code-Gen-Options.html
+// value from: https://github.com/aligrudi/neatlibc/blob/master/elf.h
+#define SYM_BIND_GNU_UNIQUE	10
 
 // https://docs.oracle.com/cd/E23824_01/html/819-0690/chapter6-79797.html
 // standard name: ST_TYPE

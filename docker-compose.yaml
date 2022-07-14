@@ -1,5 +1,0 @@
-services:
-  nm:
-    build: .
-    volumes:
-      - .:/data

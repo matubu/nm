@@ -45,15 +45,17 @@ static inline char	get_symbol_type(elf_t *elf, u64 sym_off)
 	// return (upcase('g', global)); // in a data section for small objects
 	// return ('I'); // an indirect reference to another symbol
 	// return ('N'); // a debugging symbol
-	if (rel_type == SHT_PROGBITS && rel_flags == 0)
+	if (rel_type == SEC_TYPE_PROGBITS && rel_flags == 0)
 		return ('n'); // in the read-only data section
-	// return ('p'); // in a stack unwind section
+	// https://www.zyma.me/post/stack-unwind-intro/
+	// return ('p'); // in a stack unwind section (used to handle try catch block)
 	if ((rel_type == SEC_TYPE_PROGBITS || rel_type == SEC_TYPE_NOTE) && rel_flags == SEC_FLAG_ALLOC)
 		return (upcase('r', global)); // in a read only data section
 	// return (upcase('s', global)); // in a data section for small objects (same as g ?)
 	if (rel_type == SEC_TYPE_PROGBITS && rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_EXECINSTR))
 		return (upcase('t', global)); // in text (code) section
-	// return ('u'); // a unique global symbol
+	if (rel_flags == SYM_BIND_GNU_UNIQUE)
+		return ('u'); // a unique global symbol
 	if (rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_WRITE))
 		return (upcase('d', global)); // in the data section
 	if (rel_type == SEC_TYPE_PROGBITS && rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_EXECINSTR))
