@@ -45,12 +45,3 @@ file_t	*read_file(char *path)
 
 	return (new_file_t(path, ptr, info.st_size));
 }
-
-bool	starts_with(const file_t *f, byte *p)
-{
-	printf("starts_with(%x, %x)\n", *f->ptr, *p);
-	for (usize i = 0; p[i]; ++i)
-		if (i >= f->len || p[i] != f->ptr[i])
-			return (false);
-	return (true);
-}

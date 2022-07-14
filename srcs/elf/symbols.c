@@ -14,7 +14,7 @@ static inline char	upcase(char c, int upcase)
 // https://stackoverflow.com/questions/15225346/how-to-display-the-symbols-type-like-the-nm-command
 // https://github.com/bhm-heddy/42Project_nm_elf/blob/main/srcs/flags.c
 // https://medium.com/a-42-journey/nm-otool-everything-you-need-to-know-to-build-your-own-7d4fef3d7507
-// TODO finish this
+// TODO logic for get_symbol_type
 static inline char	get_symbol_type(elf_t *elf, u64 sym_off)
 {
 	bool	global = (SYM_BIND(get_field(elf, sym_off, SYM_INFO)) & SYM_BIND_GLOBAL) ? true : false;
@@ -140,12 +140,7 @@ void	sort_symbols(symbols_t *sym)
 
 void	print_symbol(symbol_t *sym)
 {
-	if (sym->value)
-		printf("%016"PRIx64" ", sym->value);
-	else
-		printf("%16s ", "");
-
-	printf("%c %s\n", sym->type, sym->name);
+	fmt("%x %c %s\n", sym->value, sym->type, sym->name);
 }
 
 

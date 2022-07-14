@@ -22,7 +22,7 @@ void	nm(args_t *args, char *path)
 		sort_symbols(&symbols);
 
 	if (args->file_count >= 2)
-		printf("\n%s:\n", f->path);
+		fmt("\n%s:\n", f->path);
 
 	if (args->flags & reverse_sort)
 		for (u64 i = symbols.cnt; i--;)
