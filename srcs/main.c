@@ -5,12 +5,13 @@
 #include "io.h"
 #include "elf/elf.h"
 #include "file.h"
+#include "flags.h"
 
-void	nm(char *path, int show_filename)
+void	nm(args_t *args, char *path)
 {
 	file_t	*f = read_file(path);
 	if (f == NULL)
-		return (sys_err(path));
+		return (sys_err("%s", path));
 
 	elf_t	*elf = elf_from_string(f);
 	if (elf == NULL)
@@ -19,7 +20,7 @@ void	nm(char *path, int show_filename)
 	symbols_t	symbols = get_symbols(elf);
 	sort_symbols(&symbols);
 
-	if (show_filename)
+	if (args->file_count >= 2)
 		printf("\n%s:\n", f->path);
 
 	print_symbols(&symbols);
@@ -32,7 +33,8 @@ free:
 
 int	main(int argc, char **argv)
 {
-	// TODO flags
-	for (int i = 1; i < argc; ++i)
-		nm(argv[i], argc > 2);
+	args_t	*args = parse_arguments(argc, argv);
+
+	for (int i = 0; i < args->file_count; ++i)
+		nm(args, args->files[i]);
 }

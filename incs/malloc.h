@@ -7,7 +7,7 @@ static inline void	*_nm_malloc(size_t n) {
 	void	*ptr = malloc(n);
 	if (ptr == NULL)
 	{
-		PUTS(2, "nm: \033[91merror:\033[0m: could not allocate memory\n");
+		sys_err("could not allocate memory");
 		exit(1);
 	}
 	return (ptr);

@@ -1,14 +1,14 @@
-#include <errno.h>
-#include <string.h>
-
 #include "io.h"
 
-void	err(char *file, char *err)
+void help()
 {
-	printf("nm: \033[91merror:\033[0m %s: %s\n\n", file, err);
-}
-
-void	sys_err(char *file)
-{
-	printf("nm: \033[91merror:\033[0m %s: %s\n\n", file, strerror(errno));
+	PUTS(2, "Usage: ./ft_nm [option(s)] [file(s)]");
+	PUTS(2, " List symbols in [file(s)] (a.out by default).");
+	PUTS(2, " The options are:");
+	PUTS(2, "  -a     Display debugger-only symbols");
+	PUTS(2, "  -g     Display only external symbols");
+	PUTS(2, "  -p     Do not sort the symbols");
+	PUTS(2, "  -r     Reverse the sense of the sort");
+	PUTS(2, "  -u     Display only undefined symbols");
+	PUTS(2, "nm: supported targets: x86_32, x64, object files, .so");
 }

@@ -49,8 +49,6 @@ static inline char	get_symbol_type(elf_t *elf, u64 sym_off)
 		return ('n'); // in the read-only data section
 	// https://www.zyma.me/post/stack-unwind-intro/
 	// return ('p'); // in a stack unwind section (used to handle try catch block)
-	if ((rel_type == SEC_TYPE_PROGBITS || rel_type == SEC_TYPE_NOTE) && rel_flags == SEC_FLAG_ALLOC)
-		return (upcase('r', global)); // in a read only data section
 	// return (upcase('s', global)); // in a data section for small objects (same as g ?)
 	if (rel_type == SEC_TYPE_PROGBITS && rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_EXECINSTR))
 		return (upcase('t', global)); // in text (code) section
@@ -60,6 +58,8 @@ static inline char	get_symbol_type(elf_t *elf, u64 sym_off)
 		return (upcase('d', global)); // in the data section
 	if (rel_type == SEC_TYPE_PROGBITS && rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_EXECINSTR))
 		return ('i'); // in a section specific to the implementation of DLLs
+	if (!(rel_flags & SEC_FLAG_WRITE))
+		return (upcase('r', global)); // in a read only data section
 	// return ('-'); // is a stabs symbol in an a.out object file
 	return ('?'); // unknown
 }

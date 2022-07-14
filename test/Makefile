@@ -1,5 +1,7 @@
 SRCS = $(wildcard srcs/*)
-ELFS = $(patsubst srcs/%,elf/%.out,$(SRCS))
+ELFS += $(patsubst srcs/%,elf/%.out,$(SRCS))
+ELFS += $(patsubst srcs/%,elf/%.o,$(SRCS))
+ELFS += $(patsubst srcs/%,elf/%.so,$(SRCS))
 
 elf: $(SRCS)
 	@mkdir -p elf
@@ -18,22 +20,30 @@ elf_docker:
 	docker compose up --build
 
 elf/%.cpp.out: srcs/%.cpp
-	@echo "🗜  $(Green)Creating$(Eoc) $@"
-	@g++ $^ -o $@
+	g++ $^ -o $@
 elf/%.c.out: srcs/%.c
-	@echo "🗜  $(Green)Creating$(Eoc) $@"
-	@gcc $^ -o $@
+	gcc $^ -o $@
+
+elf/%.cpp.o: srcs/%.cpp
+	g++ $^ -c -o $@
+elf/%.c.o: srcs/%.c
+	gcc $^ -c -o $@
+
+elf/%.cpp.so: srcs/%.cpp
+	g++ $^ -shared -fPIC -o $@
+elf/%.c.so: srcs/%.c
+	gcc $^ -shared -fPIC -o $@
 
 fclean:
 	@echo "🗑  $(Red)Deleting$(Eoc)  elf"
 	@rm -rf elf
 
-re: fclean all
+re: fclean elf
 
 test: elf
 	@mkdir -p logs/ft_nm logs/nm
-	@echo "< ft_nm"
-	@echo "> nm"
+	@echo "-ft_nm"
+	@echo "+nm"
 	@for elf in $(notdir $(ELFS)); \
 	do \
 		echo "\n\033[1;91m>>> diff $$elf <<<\033[0m\n"; \
@@ -43,4 +53,4 @@ test: elf
 	done
 
 
-.PHONY: all fclean re test
+.PHONY: elf fclean re test
