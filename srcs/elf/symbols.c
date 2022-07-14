@@ -1,6 +1,7 @@
 #include "elf/elf.h"
 #include "int.h"
 #include "io.h"
+#include "str.h"
 
 static inline char	upcase(char c, int upcase)
 {
@@ -62,19 +63,6 @@ static inline char	get_symbol_type(elf_t *elf, u64 sym_off)
 		return (upcase('r', global)); // in a read only data section
 	// return ('-'); // is a stabs symbol in an a.out object file
 	return ('?'); // unknown
-}
-
-static inline i64		sym_cmp(byte *a, byte *b)
-{
-	if (a == NULL || b == NULL)
-		return (a - b);
-
-	while (*a != '\0' && *a == *b)
-	{
-		++a;
-		++b;
-	}
-	return (*a - *b);
 }
 
 static inline i32	sym_filter(elf_t *elf, u64 sym_off)
@@ -139,7 +127,7 @@ void	sort_symbols(symbols_t *sym)
 		sorted = true;
 		for (u64 i = 1; i < sym->cnt; ++i)
 		{
-			if (sym_cmp(sym->ptr[i-1].name, sym->ptr[i].name) > 0)
+			if (cmp_bytes(sym->ptr[i-1].name, sym->ptr[i].name) > 0)
 			{
 				symbol_t	tmp = sym->ptr[i];
 				sym->ptr[i] = sym->ptr[i-1];
@@ -150,17 +138,14 @@ void	sort_symbols(symbols_t *sym)
 	}
 }
 
-void	print_symbols(symbols_t *sym)
+void	print_symbol(symbol_t *sym)
 {
-	for (u64 i = 0; i < sym->cnt; ++i)
-	{
-		if (sym->ptr[i].value)
-			printf("%016"PRIx64" ", sym->ptr[i].value);
-		else
-			printf("%16s ", "");
+	if (sym->value)
+		printf("%016"PRIx64" ", sym->value);
+	else
+		printf("%16s ", "");
 
-		printf("%c %s\n", sym->ptr[i].type, sym->ptr[i].name);
-	}
+	printf("%c %s\n", sym->type, sym->name);
 }
 
 

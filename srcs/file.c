@@ -54,15 +54,3 @@ bool	starts_with(const file_t *f, byte *p)
 			return (false);
 	return (true);
 }
-
-bool	strsame(const byte *a, const byte *b)
-{
-	if (!a || !b)
-		return (a == b);
-	while (*a && *a == *b)
-	{
-		++a;
-		++b;
-	}
-	return (*a == *b);
-}

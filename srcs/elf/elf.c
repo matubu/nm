@@ -73,7 +73,7 @@ u64		get_section_header(elf_t *elf, const byte *name)
 	
 	for (u64 i = 0; i < sec_num; ++i)
 	{
-		if (strsame(get_section_name(elf, sec_off), name))
+		if (!cmp_bytes(get_section_name(elf, sec_off), name))
 			return (sec_off);
 		sec_off += SEC_HEADER.size[elf->class - 1];
 	}

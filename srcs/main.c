@@ -18,12 +18,19 @@ void	nm(args_t *args, char *path)
 		goto free;
 
 	symbols_t	symbols = get_symbols(elf);
-	sort_symbols(&symbols);
+	if (!(args->flags & no_sort))
+		sort_symbols(&symbols);
 
 	if (args->file_count >= 2)
 		printf("\n%s:\n", f->path);
 
-	print_symbols(&symbols);
+	if (args->flags & reverse_sort)
+		for (u64 i = symbols.cnt; i--;)
+			print_symbol(symbols.ptr + i);
+	else
+		for (u64 i = 0; i < symbols.cnt; ++i)
+			print_symbol(symbols.ptr + i);
+
 	free_symbols(&symbols);
 
 free:

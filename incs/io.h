@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
-#include <string.h>
+#include "str.h"
 
 // https://stackoverflow.com/questions/11888594/ignoring-return-values-in-c
 // Fix compilation error because of ignored return value (ex: write in PUTS macro)

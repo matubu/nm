@@ -36,9 +36,9 @@ args_t	*parse_arguments(int argc, char **argv)
 
 	for (int i = 1; i < argc; ++i)
 	{
-		if (*argv[i] == '-')
+		if (*argv[i] == '-' && len(argv[i]) > 1)
 		{
-			if (argv[i][1] == '-' && argv[i][2] == '\0')
+			if (!cmp_str(argv[i], "--"))
 			{
 				// Copy the rest of arguments in the file list
 				for (int j = i; ++j < argc;)
