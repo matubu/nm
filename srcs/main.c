@@ -9,17 +9,21 @@
 
 void	nm(args_t *args, char *path)
 {
-	file_t	*f = read_file(path);
+	file_t	*f;
+	Res(elf_ptr)	elf = InitRes(elf_ptr, NULL);
+	Res(symbols_t)	symbols = InitRes(symbols_t, ((symbols_t){ .ptr = NULL, .cnt = 0 }));
+
+	f = read_file(path);
 	if (f == NULL)
 		return (sys_err("%s", path));
 
-	Res(elf_ptr)	elf = elf_from_string(f);
+	elf = elf_from_string(f);
 	catch(elf, {
 		err("%s: %s", f->path, elf.err);
 		goto free;
 	})
 
-	Res(symbols_t)	symbols = get_symbols(elf.data);
+	symbols = get_symbols(elf.data);
 	catch(symbols, {
 		err("%s: %s", f->path, elf.err);
 		goto free;

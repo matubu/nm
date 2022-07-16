@@ -6,6 +6,7 @@
 }
 
 #define Res(type) struct Res_ ## type
+#define InitRes(type, _data) (Res(type)){ .err = NULL, .data = (_data) }
 #define Returns(type) typedef Res(type) __returns_type
 
 #define Ok(_data) (__returns_type){ .err = NULL, .data = (_data) }
