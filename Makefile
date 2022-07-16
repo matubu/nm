@@ -4,7 +4,7 @@ Deps = $(shell find incs -type f -name '*.h') Makefile
 Objs = $(Srcs:srcs/%.c=bin/%.o)
 
 Incs = -I incs
-Flag = $(Incs) -Wall -Wextra -Werror -O3 -fsanitize=address -g
+Flag = $(Incs) -Wall -Wextra -Werror -O3
 
 Red = \033[0;1;91m
 Green = \033[0;1;92m

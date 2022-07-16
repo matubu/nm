@@ -14,14 +14,14 @@ flags_e	parse_flag(char *s)
 	flags_e	flag = 0;
 	while (*++s)
 	{
-		if (flags_mapping[(uint)*s] == 0)
+		if (flags_mapping[(byte)*s] == 0)
 		{
 			err("invalid option -- '%c'", *s);
 			help();
 			exit(1);
 		}
 		else
-			flag |= flags_mapping[(uint)*s];
+			flag |= flags_mapping[(byte)*s];
 	}
 	return (flag);
 }

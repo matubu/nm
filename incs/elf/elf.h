@@ -9,6 +9,19 @@ typedef struct {
 	u64				shrtrtab;
 }	elf_t;
 
+typedef	elf_t	*elf_ptr;
+
 #include "elf/fields.h"
 #include "elf/utils.h"
 #include "elf/symbols.h"
+
+#include "res.h"
+
+
+
+NewResType(char);
+NewResType(i32);
+NewResType(u64);
+NewResType(byte_ptr);
+NewResType(elf_ptr);
+NewResType(symbols_t);

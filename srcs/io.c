@@ -34,6 +34,11 @@ void	fd_hex(int fd, u64 n) {
 	ignore(write(fd, buf, 16));
 }
 
+void	putc(int fd, char c)
+{
+	ignore(write(fd, &c, 1));
+}
+
 void	fd_fmt(int fd, char *fmt, ...)
 {
 	va_list			args;
@@ -54,8 +59,7 @@ void	fd_fmt(int fd, char *fmt, ...)
 					break ;
 
 				case 'c':
-					char c = va_arg(args, int);
-					ignore(write(fd, &c, 1));
+					putc(fd, va_arg(args, int));
 					break ;
 
 				case 'x':

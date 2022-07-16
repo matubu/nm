@@ -13,28 +13,34 @@ void	nm(args_t *args, char *path)
 	if (f == NULL)
 		return (sys_err("%s", path));
 
-	elf_t	*elf = elf_from_string(f);
-	if (elf == NULL)
+	Res(elf_ptr)	elf = elf_from_string(f);
+	catch(elf, {
+		err("%s: %s", f->path, elf.err);
 		goto free;
+	})
 
-	symbols_t	symbols = get_symbols(elf);
+	Res(symbols_t)	symbols = get_symbols(elf.data);
+	catch(symbols, {
+		err("%s: %s", f->path, elf.err);
+		goto free;
+	})
 	if (!(args->flags & no_sort))
-		sort_symbols(&symbols);
+		sort_symbols(&symbols.data);
 
 	if (args->file_count >= 2)
 		fmt("\n%s:\n", f->path);
 
 	if (args->flags & reverse_sort)
-		for (u64 i = symbols.cnt; i--;)
-			print_symbol(symbols.ptr + i);
+		for (u64 i = symbols.data.cnt; i--;)
+			print_symbol(symbols.data.ptr + i);
 	else
-		for (u64 i = 0; i < symbols.cnt; ++i)
-			print_symbol(symbols.ptr + i);
+		for (u64 i = 0; i < symbols.data.cnt; ++i)
+			print_symbol(symbols.data.ptr + i);
 
-	free_symbols(&symbols);
 
 free:
-	free(elf);
+	free(elf.data);
+	free_symbols(&symbols.data);
 	free_file(f);
 }
 

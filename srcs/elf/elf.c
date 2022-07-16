@@ -16,17 +16,15 @@ static inline u64	swap_endianess(u64 a)
 	);
 }
 
-u64	get_field(const elf_t *elf, u64 off, elf_field_t field)
+Res(u64)	_get_field(const elf_t *elf, u64 off, elf_field_t field)
 {
+	Returns(u64);
+
 	const int		elf_class = elf->class - 1;
 
 	off += field.off[elf_class];
 	if (off >= elf->f->len)
-	{
-		// TODO better error handling
-		err("%s (out of bound)", elf->f->path);
-		return (0);
-	}
+		throw("missing data");
 
 	const u64	data = *(u64 *)(elf->f->ptr + off);
 	const u64	mask_map[] = { 
@@ -45,70 +43,81 @@ u64	get_field(const elf_t *elf, u64 off, elf_field_t field)
 		masked = swap_endianess(masked);
 	}
 
-	return (masked);
+	return Ok(masked);
 }
 
-byte	*get_section_name(elf_t *elf, u64 sec_off)
+Res(byte_ptr) get_section_name(elf_t *elf, u64 sec_off)
 {
+	Returns(byte_ptr);
+
 	if (sec_off == 0)
-		return (NULL);
-	return (
+		return Ok(NULL);
+	return Ok(
 		elf->f->ptr
 		+ elf->shrtrtab
 		+ get_field(elf, sec_off, SEC_NAME)
 	);
 }
 
-u64		get_section_header_from_idx(elf_t *elf, u64 idx)
+Res(u64)		get_section_header_from_idx(elf_t *elf, u64 idx)
 {
+	Returns(u64);
+
 	u64	sec_off = get_elf_field(elf, ELF_SHOFF);
 
-	return (sec_off + SEC_HEADER.size[elf->class - 1] * idx);
+	return Ok(sec_off + SEC_HEADER.size[elf->class - 1] * idx);
 }
 
-u64		get_section_header(elf_t *elf, const byte *name)
+Res(u64)	get_section_header(elf_t *elf, const byte *name)
 {
+	Returns(u64);
+
 	u64	sec_off = get_elf_field(elf, ELF_SHOFF);
 	u64	sec_num = get_elf_field(elf, ELF_SHNUM);
 	
 	for (u64 i = 0; i < sec_num; ++i)
 	{
-		if (!cmp_bytes(get_section_name(elf, sec_off), name))
-			return (sec_off);
+		if (!cmp_bytes(unwrap(get_section_name(elf, sec_off)), name))
+			return Ok(sec_off);
 		sec_off += SEC_HEADER.size[elf->class - 1];
 	}
-	return (0);
+	return Ok(0);
 }
 
-u64		get_section(elf_t *elf, const byte *name)
+Res(u64)	get_section(elf_t *elf, const byte *name)
 {
-	u64	sec_header_off = get_section_header(elf, name);
+	Returns(u64);
+
+	u64	sec_header_off = unwrap(get_section_header(elf, name));
 	
 	if (!sec_header_off)
-		return (0);
-	return (get_field(elf, sec_header_off, SEC_OFFSET));
+		return Ok(0);
+	return (_get_field(elf, sec_header_off, SEC_OFFSET));
 }
 
-static inline u64	get_shrtrtab(elf_t *elf)
+static inline Res(u64)	get_shrtrtab(elf_t *elf)
 {
+	Returns(u64);
+
 	u64	names_sec_idx = get_elf_field(elf, ELF_SHSTRNDX);
 	u64	sections_table_off = get_elf_field(elf, ELF_SHOFF);
 
 	u64	names_sec_header_off = sections_table_off
 		+ names_sec_idx * SEC_HEADER.size[elf->class - 1];
 
-	return (get_field(elf, names_sec_header_off, SEC_OFFSET));
+	return (_get_field(elf, names_sec_header_off, SEC_OFFSET));
 }
 
-elf_t	*elf_from_string(const file_t *f)
+Res(elf_ptr) elf_from_string(const file_t *f)
 {
-	#define invalid_elf(elf, s) { \
-		err("%s: Invalid ELF file: " s, elf->f->path); \
-		free(elf); \
-		return (NULL); \
-	}
+	Returns(elf_ptr);
 
 	elf_t	*elf = malloc(sizeof(elf_t));
+
+	#define invalid_elf(elf, s) { \
+		free(elf); \
+		throw("Invalid ELF file: " s); \
+	}
 
 	elf->f = f;
 	elf->class = 1;
@@ -135,7 +144,7 @@ elf_t	*elf_from_string(const file_t *f)
 	if (get_elf_field(elf, ELF_EI_VERSION) != 1 || get_elf_field(elf, ELF_VERSION) != 1)
 		invalid_elf(elf, "version not supported");
 
-	elf->shrtrtab = get_shrtrtab(elf);
+	elf->shrtrtab = unwrap(get_shrtrtab(elf));
 
-	return (elf);
+	return Ok(elf);
 }
