@@ -40,8 +40,6 @@ fclean:
 
 re: fclean elf
 
-NORMALIZE = tr '0' ' ' | sort
-
 test: elf
 	@mkdir -p logs/ft_nm logs/nm
 	@echo "-ft_nm"
@@ -49,8 +47,8 @@ test: elf
 	@for elf in $(notdir $(ELFS)); \
 	do \
 		echo "\n\033[1;91m>>> diff $$elf <<<\033[0m\n"; \
-		../ft_nm elf/$$elf | $(NORMALIZE) | sort > ./logs/ft_nm/$$elf; \
-		nm elf/$$elf | $(NORMALIZE) > ./logs/nm/$$elf; \
+		../ft_nm elf/$$elf | sort > ./logs/ft_nm/$$elf; \
+		nm elf/$$elf > ./logs/nm/$$elf; \
 		diff -U0 logs/ft_nm/$$elf logs/nm/$$elf; \
 	done
 

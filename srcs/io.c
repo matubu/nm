@@ -21,15 +21,9 @@ void	fd_hex(int fd, u64 n) {
 	char	buf[16];
 	u64		i = 16;
 
-	if (n == 0) {
-		while (i--)
-			buf[i] = ' ';
-	}
-	else {
-		while (i--) {
-			buf[i] = "0123456789abcdef"[n % 16];
-			n /= 16;
-		}
+	while (i--) {
+		buf[i] = "0123456789abcdef"[n % 16];
+		n /= 16;
 	}
 	ignore(write(fd, buf, 16));
 }

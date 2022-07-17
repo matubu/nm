@@ -89,6 +89,8 @@ static inline Res(i32)	sym_filter(args_t *args, elf_t *elf, u64 sym_off)
 	return Ok(1);
 }
 
+#include <stdio.h>
+
 // readelf -s elf
 static inline Res(symbols_t)	parse_elf_symbols(args_t *args, elf_t *elf, u64 sec_off, u64 sym_names_sec)
 {
@@ -108,6 +110,7 @@ static inline Res(symbols_t)	parse_elf_symbols(args_t *args, elf_t *elf, u64 sec
 		if (unwrap(sym_filter(args, elf, sym_sec_off)))
 		{
 			sym.ptr[sym.cnt].value = get_field(elf, sym_sec_off, SYM_VALUE);
+			sym.ptr[sym.cnt].undefined = get_field(elf, sym_sec_off, SYM_REL) == SYM_REL_UNDEF;
 			sym.ptr[sym.cnt].type = unwrap(get_symbol_type(elf, sym_sec_off));
 			sym.ptr[sym.cnt].name = elf->f->ptr + sym_names_sec + get_field(elf, sym_sec_off, SYM_NAME);
 			++sym.cnt;
@@ -154,7 +157,11 @@ void	sort_symbols(symbols_t *sym)
 
 void	print_symbol(symbol_t *sym)
 {
-	fmt("%x %c %s\n", sym->value, sym->type, sym->name);
+	if (sym->undefined)
+		fmt("                ");
+	else
+		fmt("%x", sym->value);
+	fmt(" %c %s\n", sym->type, sym->name);
 }
 
 

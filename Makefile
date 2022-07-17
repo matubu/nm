@@ -14,6 +14,8 @@ Args = elf
 
 all: $(Name)
 
+bonus: all
+
 run: all elf
 	@echo "🖥  $(Green)launching$(Eoc) ./$(Name) $(Args)"
 	@./$(Name) $(Args)

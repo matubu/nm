@@ -1,10 +1,12 @@
 #pragma once
 
 #include "res.h"
+#include "int.h"
 #include "flags.h"
 
 typedef struct {
 	u64		value;
+	bool	undefined;
 	char	type;
 	byte	*name;
 }	symbol_t;
