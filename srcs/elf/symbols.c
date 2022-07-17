@@ -15,7 +15,6 @@ static inline char	upcase(char c, int upcase)
 // https://stackoverflow.com/questions/15225346/how-to-display-the-symbols-type-like-the-nm-command
 // https://github.com/bhm-heddy/42Project_nm_elf/blob/main/srcs/flags.c
 // https://medium.com/a-42-journey/nm-otool-everything-you-need-to-know-to-build-your-own-7d4fef3d7507
-// TODO finish get_symbol_type
 static inline Res(char)	get_symbol_type(elf_t *elf, u64 sym_off)
 {
 	Returns(char);

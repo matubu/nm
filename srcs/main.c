@@ -7,7 +7,6 @@
 #include "file.h"
 #include "flags.h"
 
-// TODO fix diff tests
 void	nm(args_t *args, char *path)
 {
 	Res(file_ptr)	f = InitRes(file_ptr, NULL);
