@@ -6,8 +6,6 @@
 #include "malloc.h"
 #include "file.h"
 
-#include <stdio.h>
-
 static inline Res(file_ptr)	new_file_t(char *path, byte *ptr, usize len)
 {
 	Returns(file_ptr);

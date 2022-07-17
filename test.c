@@ -1,6 +1,3 @@
-#include <stdio.h>
-
-
 #include "./incs/res.h"
 
 

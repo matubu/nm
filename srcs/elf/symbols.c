@@ -14,7 +14,8 @@ static inline char	upcase(char c, int upcase)
 // http://flint.cs.yale.edu/cs422/doc/ELF_Format.pdf
 // https://stackoverflow.com/questions/15225346/how-to-display-the-symbols-type-like-the-nm-command
 // https://github.com/bhm-heddy/42Project_nm_elf/blob/main/srcs/flags.c
-// https://medium.com/a-42-journey/nm-otool-everything-you-need-to-know-to-build-your-own-7d4fef3d7507
+// https://upload.wikimedia.org/wikiversity/en/0/0a/ELF1.1E.SymbolTbl.20220627.pdf
+// https://binarydodo.wordpress.com/2016/05/12/symbol-binding-types-in-elf-and-their-effect-on-linking-of-relocatable-files/
 static inline Res(char)	get_symbol_type(elf_t *elf, u64 sym_off)
 {
 	Returns(char);
@@ -23,13 +24,17 @@ static inline Res(char)	get_symbol_type(elf_t *elf, u64 sym_off)
 	u64		sym_type = SYM_TYPE(get_field(elf, sym_off, SYM_INFO));
 	u64		rel = get_field(elf, sym_off, SYM_REL);
 
+	u64		rel_off = unwrap(get_section_header_from_idx(elf, rel));
+	u64		rel_type = get_field(elf, rel_off, SEC_TYPE);
+	u64		rel_flags = get_field(elf, rel_off, SEC_FLAGS);
+	byte	*rel_name = unwrap(get_section_name(elf, rel_off));
 
 	if (SYM_BIND(get_field(elf, sym_off, SYM_INFO)) & SYM_BIND_WEAK)
 	{
 		if (sym_type & SYM_TYPE_OBJECT)
-			return Ok(upcase('v', global)); // is a weak object
+			return Ok(upcase('v', cmp_bytes(rel_name, (byte *)".bss"))); // is a weak object
 		else
-			return Ok(upcase('w', global)); // is a weak symbol
+			return Ok(upcase('w', !cmp_bytes(rel_name, (byte *)".data"))); // is a weak symbol
 	}
 
 	if (rel == SYM_REL_ABS)
@@ -39,22 +44,17 @@ static inline Res(char)	get_symbol_type(elf_t *elf, u64 sym_off)
 	if (rel == SYM_REL_UNDEF)
 		return Ok('U'); // is undefined
 
-	u64		rel_off = unwrap(get_section_header_from_idx(elf, rel));
-	u64		rel_type = get_field(elf, rel_off, SEC_TYPE);
-	u64		rel_flags = get_field(elf, rel_off, SEC_FLAGS);
-
 	if (rel_type == SEC_TYPE_NOBITS && rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_WRITE))
 		return Ok(upcase('b', global)); // in uninitialized data section (bss)
 	// return (upcase('g', global)); // in a data section for small objects
 	// return ('I'); // an indirect reference to another symbol
 	// return ('N'); // a debugging symbol
-	if (rel_type == SEC_TYPE_PROGBITS && rel_flags == 0)
-		return Ok('n'); // in the read-only data section
 	// https://www.zyma.me/post/stack-unwind-intro/
 	// return ('p'); // in a stack unwind section (used to handle try catch block)
 	// return (upcase('s', global)); // in a data section for small objects (same as g ?)
-	if (rel_type == SEC_TYPE_PROGBITS && rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_EXECINSTR))
+	if (rel_type == SEC_TYPE_PROGBITS && (rel_flags & SEC_FLAG_ALLOC) && (rel_flags & SEC_FLAG_EXECINSTR))
 		return Ok(upcase('t', global)); // in text (code) section
+
 	if (rel_flags == SYM_BIND_GNU_UNIQUE)
 		return Ok('u'); // a unique global symbol
 	if (rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_WRITE))
@@ -63,6 +63,8 @@ static inline Res(char)	get_symbol_type(elf_t *elf, u64 sym_off)
 		return Ok('i'); // in a section specific to the implementation of DLLs
 	if (!(rel_flags & SEC_FLAG_WRITE))
 		return Ok(upcase('r', global)); // in a read only data section
+	if (rel_type == SEC_TYPE_PROGBITS && !(rel_flags & SEC_FLAG_WRITE))
+		return Ok('n'); // in the read-only data section
 	// return ('-'); // is a stabs symbol in an a.out object file
 	return Ok('?'); // unknown
 }
@@ -88,8 +90,6 @@ static inline Res(i32)	sym_filter(args_t *args, elf_t *elf, u64 sym_off)
 
 	return Ok(1);
 }
-
-#include <stdio.h>
 
 // readelf -s elf
 static inline Res(symbols_t)	parse_elf_symbols(args_t *args, elf_t *elf, u64 sec_off, u64 sym_names_sec)
