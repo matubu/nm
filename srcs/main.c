@@ -7,6 +7,8 @@
 #include "file.h"
 #include "flags.h"
 
+// TODO fix diff tests
+// TODO fix filtering flag handling
 void	nm(args_t *args, char *path)
 {
 	Res(file_ptr)	f = InitRes(file_ptr, NULL);
@@ -25,7 +27,7 @@ void	nm(args_t *args, char *path)
 		goto free;
 	});
 
-	symbols = get_symbols(elf.data);
+	symbols = get_symbols(args, elf.data);
 	catch(symbols, {
 		err("%s: %s", path, elf.err);
 		goto free;
@@ -37,7 +39,7 @@ void	nm(args_t *args, char *path)
 	if (args->file_count >= 2)
 		fmt("\n%s:\n", path);
 
-	if (args->flags & reverse_sort)
+	if (args->flags & reverse_sort && !(args->flags & no_sort))
 		for (u64 i = symbols.data.cnt; i--;)
 			print_symbol(symbols.data.ptr + i);
 	else

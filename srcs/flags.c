@@ -1,7 +1,6 @@
 #include "flags.h"
 #include "malloc.h"
 
-// TODO handle all flags
 flags_e	flags_mapping[256] = {
 	['a'] = debugger_symbols,
 	['g'] = only_global_symbols,

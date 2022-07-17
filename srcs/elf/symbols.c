@@ -1,4 +1,5 @@
 #include "elf/elf.h"
+#include "flags.h"
 #include "int.h"
 #include "io.h"
 #include "str.h"
@@ -67,21 +68,30 @@ static inline Res(char)	get_symbol_type(elf_t *elf, u64 sym_off)
 	return Ok('?'); // unknown
 }
 
-static inline Res(i32)	sym_filter(elf_t *elf, u64 sym_off)
+static inline Res(i32)	sym_filter(args_t *args, elf_t *elf, u64 sym_off)
 {
 	Returns(i32);
 
 	if (!get_field(elf, sym_off, SYM_NAME))
 		return Ok(0);
 	
-	if (SYM_TYPE(get_field(elf, sym_off, SYM_INFO)) == SYM_TYPE_FILE)
+	if (!(args->flags & debugger_symbols)
+		&& (SYM_TYPE(get_field(elf, sym_off, SYM_INFO)) == SYM_TYPE_FILE))
+		return Ok(0);
+	
+	if ((args->flags & only_global_symbols)
+		&& !(SYM_BIND(get_field(elf, sym_off, SYM_INFO)) & SYM_BIND_GLOBAL))
+		return Ok(0);
+	
+	if ((args->flags & only_undefined_symbols)
+		&& (get_field(elf, sym_off, SYM_REL) != SYM_REL_UNDEF))
 		return Ok(0);
 
 	return Ok(1);
 }
 
 // readelf -s elf
-static inline Res(symbols_t)	parse_elf_symbols(elf_t *elf, u64 sec_off, u64 sym_names_sec)
+static inline Res(symbols_t)	parse_elf_symbols(args_t *args, elf_t *elf, u64 sec_off, u64 sym_names_sec)
 {
 	Returns(symbols_t);
 
@@ -96,7 +106,7 @@ static inline Res(symbols_t)	parse_elf_symbols(elf_t *elf, u64 sec_off, u64 sym_
 
 	while (cnt--)
 	{
-		if (unwrap(sym_filter(elf, sym_sec_off)))
+		if (unwrap(sym_filter(args, elf, sym_sec_off)))
 		{
 			sym.ptr[sym.cnt].value = get_field(elf, sym_sec_off, SYM_VALUE);
 			sym.ptr[sym.cnt].type = unwrap(get_symbol_type(elf, sym_sec_off));
@@ -109,7 +119,7 @@ static inline Res(symbols_t)	parse_elf_symbols(elf_t *elf, u64 sec_off, u64 sym_
 	return Ok(sym);
 }
 
-Res(symbols_t)	get_symbols(elf_t *elf)
+Res(symbols_t)	get_symbols(args_t *args, elf_t *elf)
 {
 	Returns(symbols_t);
 
@@ -120,7 +130,7 @@ Res(symbols_t)	get_symbols(elf_t *elf)
 	{
 		return Ok(((symbols_t){ .cnt = 0, .ptr = NULL }));
 	};
-	return Ok(unwrap(parse_elf_symbols(elf, sym_sec, sym_names_sec)));
+	return Ok(unwrap(parse_elf_symbols(args, elf, sym_sec, sym_names_sec)));
 }
 
 void	sort_symbols(symbols_t *sym)

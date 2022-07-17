@@ -51,7 +51,7 @@ test: elf
 		echo "\n\033[1;91m>>> diff $$elf <<<\033[0m\n"; \
 		../ft_nm elf/$$elf | $(NORMALIZE) | sort > ./logs/ft_nm/$$elf; \
 		nm elf/$$elf | $(NORMALIZE) > ./logs/nm/$$elf; \
-		diff --color=always -u0 logs/ft_nm/$$elf logs/nm/$$elf; \
+		diff -U0 logs/ft_nm/$$elf logs/nm/$$elf; \
 	done
 
 
