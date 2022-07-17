@@ -47,7 +47,7 @@ test: elf
 	@for elf in $(notdir $(ELFS)); \
 	do \
 		echo "\n\033[1;91m>>> diff $$elf <<<\033[0m\n"; \
-		../ft_nm elf/$$elf | sort > ./logs/ft_nm/$$elf; \
+		../ft_nm elf/$$elf > ./logs/ft_nm/$$elf; \
 		nm elf/$$elf > ./logs/nm/$$elf; \
 		diff -U0 logs/ft_nm/$$elf logs/nm/$$elf; \
 	done
