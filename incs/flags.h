@@ -1,5 +1,7 @@
 #pragma once
 
+#include "res.h"
+
 typedef enum {
 	debugger_symbols      = 0b00001, // -a
 	only_global_symbols   = 0b00010, // -g
@@ -14,5 +16,8 @@ typedef struct {
 	int		file_count;
 }	args_t;
 
-args_t	*parse_arguments(int argc, char **argv);
-void	free_arguments(args_t *args);
+NewResType(args_t);
+NewResType(flags_e);
+
+Res(args_t)	parse_arguments(int argc, char **argv);
+void			free_arguments(args_t *args);

@@ -17,8 +17,6 @@ typedef	elf_t	*elf_ptr;
 
 #include "res.h"
 
-
-
 NewResType(char);
 NewResType(i32);
 NewResType(u64);

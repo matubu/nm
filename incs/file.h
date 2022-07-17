@@ -1,6 +1,7 @@
 #pragma once
 
 #include "int.h"
+#include "res.h"
 
 typedef struct {
 	char	*path;
@@ -8,5 +9,8 @@ typedef struct {
 	usize	len;
 }	file_t;
 
-void	free_file(file_t *s);
-file_t	*read_file(char *path);
+typedef file_t	*file_ptr;
+NewResType(file_ptr);
+
+void			free_file(file_t *s);
+Res(file_ptr)	read_file(char *path);

@@ -5,8 +5,6 @@
 #include <errno.h>
 #include "str.h"
 
-// TODO remove exit
-
 // https://stackoverflow.com/questions/11888594/ignoring-return-values-in-c
 // Fix compilation error because of ignored return value (ex: write in PUTS macro)
 #define ignore(F) if (F){}

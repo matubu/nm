@@ -39,7 +39,6 @@ Res(u64)	_get_field(const elf_t *elf, u64 off, elf_field_t field)
 	if (off >= 0x10 && CurrentEndian != elf->endian)
 	{
 		// TODO test on different endianess
-		// TODO check every offset, non-null string
 		masked = swap_endianess(masked);
 	}
 
@@ -116,7 +115,7 @@ Res(elf_ptr) elf_from_string(const file_t *f)
 
 	#define invalid_elf(elf, s) { \
 		free(elf); \
-		throw("Invalid ELF file: " s); \
+		throw("invalid ELF file: " s); \
 	}
 
 	elf->f = f;
@@ -124,21 +123,17 @@ Res(elf_ptr) elf_from_string(const file_t *f)
 
 	// Check magic's bytes
 	if (get_elf_field(elf, ELF_MAGIC) != elf_magic)
-		invalid_elf(elf, "Invalid magic bytes");
+		invalid_elf(elf, "invalid magic bytes");
 
 	// Check the class (64 or 32 bit)
 	elf->class = get_elf_field(elf, ELF_CLASS);
 	if (elf->class != 1 && elf->class != 2)
-		invalid_elf(elf, "Invalid class");
-
-	// Check is big enough to contain the entire header depending on the class
-	if (f->len < ELF_HEADER.size[elf->class - 1])
-		invalid_elf(elf, "Header incomplete");
+		invalid_elf(elf, "invalid class");
 
 	// Check the endianess (Little-endian or Big-endian)
 	elf->endian = get_elf_field(elf, ELF_DATA);
 	if (elf->endian != 1 && elf->endian != 2)
-		invalid_elf(elf, "Invalid endianness");
+		invalid_elf(elf, "invalid endianness");
 
 	// Check if the elf version is supported
 	if (get_elf_field(elf, ELF_EI_VERSION) != 1 || get_elf_field(elf, ELF_VERSION) != 1)

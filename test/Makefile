@@ -35,7 +35,7 @@ elf/%.c.so: srcs/%.c
 	gcc $^ -shared -fPIC -o $@
 
 fclean:
-	@echo "🗑  $(Red)Deleting$(Eoc)  elf"
+	@echo "🗑  $(Red)deleting$(Eoc)  elf"
 	@rm -rf elf
 
 re: fclean elf

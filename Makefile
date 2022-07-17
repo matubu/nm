@@ -15,24 +15,24 @@ Args = elf
 all: $(Name)
 
 run: all elf
-	@echo "🖥  $(Green)Launching$(Eoc) ./$(Name) $(Args)"
+	@echo "🖥  $(Green)launching$(Eoc) ./$(Name) $(Args)"
 	@./$(Name) $(Args)
 
 bin/%.o: srcs/%.c $(Deps)
-	@echo "🔧 $(Green)Compiling$(Eoc) $(notdir $<)"
+	@echo "🔧 $(Green)compiling$(Eoc) $(notdir $<)"
 	@mkdir -p $(dir $@)
 	@gcc $(Flag) -c $< -o $@
 
 $(Name): $(Objs)
-	@echo "🎯 $(Green)Compiling$(Eoc) $@"
+	@echo "🎯 $(Green)compiling$(Eoc) $@"
 	@gcc $(Flag) $^ -o $@
 
 clean:
-	@echo "🗑  $(Red)Deleting$(Eoc)  binaries"
+	@echo "🗑  $(Red)deleting$(Eoc)  binaries"
 	@rm -rf bin
 
 fclean: clean
-	@echo "🗑  $(Red)Deleting$(Eoc)  $(Name)"
+	@echo "🗑  $(Red)deleting$(Eoc)  $(Name)"
 	@rm -rf $(Name)
 
 re: fclean all

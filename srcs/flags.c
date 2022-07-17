@@ -1,6 +1,7 @@
 #include "flags.h"
 #include "malloc.h"
 
+// TODO handle all flags
 flags_e	flags_mapping[256] = {
 	['a'] = debugger_symbols,
 	['g'] = only_global_symbols,
@@ -9,8 +10,10 @@ flags_e	flags_mapping[256] = {
 	['p'] = no_sort
 };
 
-flags_e	parse_flag(char *s)
+Res(flags_e)	parse_flag(char *s)
 {
+	Returns(flags_e);
+
 	flags_e	flag = 0;
 	while (*++s)
 	{
@@ -18,21 +21,23 @@ flags_e	parse_flag(char *s)
 		{
 			err("invalid option -- '%c'", *s);
 			help();
-			exit(1);
+			throw("exiting because of invalid arguments");
 		}
 		else
 			flag |= flags_mapping[(byte)*s];
 	}
-	return (flag);
+	return Ok(flag);
 }
 
-args_t	*parse_arguments(int argc, char **argv)
+Res(args_t)	parse_arguments(int argc, char **argv)
 {
-	args_t	*args = malloc(sizeof(args_t));
+	Returns(args_t);
 
-	args->flags = 0;
-	args->files = malloc((argc < 2 ? 2 : argc) * sizeof(char *));
-	args->file_count = 0;
+	args_t	args;
+
+	args.flags = 0;
+	args.files = malloc((argc < 2 ? 2 : argc) * sizeof(char *));
+	args.file_count = 0;
 
 	for (int i = 1; i < argc; ++i)
 	{
@@ -42,29 +47,28 @@ args_t	*parse_arguments(int argc, char **argv)
 			{
 				// Copy the rest of arguments in the file list
 				for (int j = i; ++j < argc;)
-					args->files[args->file_count++] = argv[j];
+					args.files[args.file_count++] = argv[j];
 				break ;
 			}
 			// Parse the argument
-			args->flags |= parse_flag(argv[i]);
+			args.flags |= unwrap(parse_flag(argv[i]));
 		}
 		else
 		{
 			// Save the argument in the file list
-			args->files[args->file_count++] = argv[i];
+			args.files[args.file_count++] = argv[i];
 		}
 	}
 
 	// If no files are specified take the a.out
-	if (args->file_count == 0)
-		args->files[args->file_count++] = "a.out";
+	if (args.file_count == 0)
+		args.files[args.file_count++] = "a.out";
 	// Terminate the char **
-	args->files[args->file_count] = NULL;
-	return (args);
+	args.files[args.file_count] = NULL;
+	return Ok(args);
 }
 
 void	free_arguments(args_t *args)
 {
 	free(args->files);
-	free(args);
 }
