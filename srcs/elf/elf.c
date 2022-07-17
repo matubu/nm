@@ -37,10 +37,7 @@ Res(u64)	_get_field(const elf_t *elf, u64 off, elf_field_t field)
 	u64 masked = data & mask;
 
 	if (off >= 0x10 && CurrentEndian != elf->endian)
-	{
-		// TODO test on different endianess
 		masked = swap_endianess(masked);
-	}
 
 	return Ok(masked);
 }

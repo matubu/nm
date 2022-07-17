@@ -80,7 +80,7 @@ static inline Res(i32)	sym_filter(args_t *args, elf_t *elf, u64 sym_off)
 		return Ok(0);
 	
 	if ((args->flags & only_global_symbols)
-		&& !(SYM_BIND(get_field(elf, sym_off, SYM_INFO)) & SYM_BIND_GLOBAL))
+		&& !(SYM_BIND(get_field(elf, sym_off, SYM_INFO)) & (SYM_BIND_GLOBAL | SYM_BIND_WEAK)))
 		return Ok(0);
 	
 	if ((args->flags & only_undefined_symbols)

@@ -8,7 +8,6 @@
 #include "flags.h"
 
 // TODO fix diff tests
-// TODO fix filtering flag handling
 void	nm(args_t *args, char *path)
 {
 	Res(file_ptr)	f = InitRes(file_ptr, NULL);
