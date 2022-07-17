@@ -15,7 +15,6 @@ static inline char	upcase(char c, int upcase)
 // https://stackoverflow.com/questions/15225346/how-to-display-the-symbols-type-like-the-nm-command
 // https://github.com/bhm-heddy/42Project_nm_elf/blob/main/srcs/flags.c
 // https://upload.wikimedia.org/wikiversity/en/0/0a/ELF1.1E.SymbolTbl.20220627.pdf
-// https://binarydodo.wordpress.com/2016/05/12/symbol-binding-types-in-elf-and-their-effect-on-linking-of-relocatable-files/
 static inline Res(char)	get_symbol_type(elf_t *elf, u64 sym_off)
 {
 	Returns(char);
@@ -29,6 +28,7 @@ static inline Res(char)	get_symbol_type(elf_t *elf, u64 sym_off)
 	u64		rel_flags = get_field(elf, rel_off, SEC_FLAGS);
 	byte	*rel_name = unwrap(get_section_name(elf, rel_off));
 
+	// https://binarydodo.wordpress.com/2016/05/12/symbol-binding-types-in-elf-and-their-effect-on-linking-of-relocatable-files/
 	if (SYM_BIND(get_field(elf, sym_off, SYM_INFO)) & SYM_BIND_WEAK)
 	{
 		if (sym_type & SYM_TYPE_OBJECT)
@@ -52,7 +52,10 @@ static inline Res(char)	get_symbol_type(elf_t *elf, u64 sym_off)
 	// https://www.zyma.me/post/stack-unwind-intro/
 	// return ('p'); // in a stack unwind section (used to handle try catch block)
 	// return (upcase('s', global)); // in a data section for small objects (same as g ?)
-	if (rel_type == SEC_TYPE_PROGBITS && (rel_flags & SEC_FLAG_ALLOC) && (rel_flags & SEC_FLAG_EXECINSTR))
+	if ((rel_type == SEC_TYPE_PROGBITS && (rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_EXECINSTR)))
+		||
+		((rel_type == SEC_TYPE_FINI_ARRAY || rel_type == SEC_TYPE_INIT_ARRAY)
+			&& (rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_WRITE))))
 		return Ok(upcase('t', global)); // in text (code) section
 
 	if (rel_flags == SYM_BIND_GNU_UNIQUE)
@@ -61,10 +64,11 @@ static inline Res(char)	get_symbol_type(elf_t *elf, u64 sym_off)
 		return Ok(upcase('d', global)); // in the data section
 	if (rel_type == SEC_TYPE_PROGBITS && rel_flags == (SEC_FLAG_ALLOC | SEC_FLAG_EXECINSTR))
 		return Ok('i'); // in a section specific to the implementation of DLLs
+	// https://clang.llvm.org/docs/ItaniumMangleAbiTags.html
+	if (rel_type == SEC_TYPE_NOTE && !(rel_flags & SEC_FLAG_WRITE))
+		return Ok('n'); // in the read-only data section
 	if (!(rel_flags & SEC_FLAG_WRITE))
 		return Ok(upcase('r', global)); // in a read only data section
-	if (rel_type == SEC_TYPE_PROGBITS && !(rel_flags & SEC_FLAG_WRITE))
-		return Ok('n'); // in the read-only data section
 	// return ('-'); // is a stabs symbol in an a.out object file
 	return Ok('?'); // unknown
 }
