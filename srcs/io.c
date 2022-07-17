@@ -14,6 +14,11 @@ void help()
 }
 
 void	fd_puts(int fd, char *s) {
+	if (s == NULL)
+	{
+		PUTS(fd, "NULL");
+		return ;
+	}
 	ignore(write(fd, s, len(s)));
 }
 

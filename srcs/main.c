@@ -27,7 +27,7 @@ void	nm(args_t *args, char *path)
 
 	symbols = get_symbols(args, elf.data);
 	catch(symbols, {
-		err("%s: %s", path, elf.err);
+		err("%s: %s", path, symbols.err);
 		goto free;
 	});
 
