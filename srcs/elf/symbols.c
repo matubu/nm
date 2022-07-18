@@ -101,6 +101,8 @@ static inline Res(symbols_t)	parse_elf_symbols(args_t *args, elf_t *elf, u64 sec
 	Returns(symbols_t);
 
 	u64			sym_sec_entsize = get_field(elf, sec_off, SEC_ENTSIZE);
+	if (sym_sec_entsize != SYM_HEADER.size[elf->class - 1])
+		throw("invalid symbol header entry size");
 	u64			sym_sec_off = get_field(elf, sec_off, SEC_OFFSET) + sym_sec_entsize;
 
 	u64			cnt = (get_field(elf, sec_off, SEC_SIZE) / sym_sec_entsize) - 1;
@@ -133,9 +135,7 @@ Res(symbols_t)	get_symbols(args_t *args, elf_t *elf)
 	u64			sym_names_sec = unwrap(get_section(elf, (byte *)".strtab"));
 
 	if (sym_sec == 0 || sym_names_sec == 0)
-	{
 		return Ok(((symbols_t){ .cnt = 0, .ptr = NULL }));
-	};
 	return Ok(unwrap(parse_elf_symbols(args, elf, sym_sec, sym_names_sec)));
 }
 

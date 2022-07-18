@@ -142,10 +142,12 @@ extern const char	*elf_machine[];
 	{2, 2} \
 }) // The number of entries in the program header table
 
+// standard name: e_shentsize
+// Size of a section header table entry
 #define ELF_SHENTSIZE ((elf_field_t) { \
 	{0x2E, 0x3A}, \
 	{2, 2} \
-}) // Size of a section header table entry
+})
 
 #define ELF_SHNUM ((elf_field_t) { \
 	{0x30, 0x3C}, \
@@ -213,16 +215,19 @@ extern const char	*prog_type[];
 // Section header
 // https://en.wikipedia.org/wiki/Executable_and_Linkable_Format#Section_header
 
+// standard name: sh_name
+// An offset to a string in the .shstrtab section that represents the name of this section
 #define SEC_NAME ((elf_field_t) { \
 	{0x0, 0x0}, \
 	{4, 4} \
-}) // An offset to a string in the .shstrtab section that represents the name of this section
+})
 
 // standard name: sh_type
+// Identifies the type of this header
 #define SEC_TYPE ((elf_field_t) { \
 	{0x4, 0x4}, \
 	{4, 4} \
-}) // Identifies the type of this header
+})
 extern const char	*sec_type[];
 // https://docs.oracle.com/cd/E19683-01/817-3677/chapter6-94076/index.html
 // standard name: SHT_
@@ -254,10 +259,12 @@ extern const char	*sec_type[];
 #define SEC_TYPE_SUNW_verneed	0x6ffffffe // Identifies fine-grained dependencies required by this file
 #define SEC_TYPE_SUNW_versym	0x6fffffff // Identifies a table describing the relationship of symbols to the version definitions offered by the file
 
+// standard name: sh_flags
+// Identifies the attributes of the section
 #define SEC_FLAGS ((elf_field_t) { \
 	{0x8, 0x8}, \
 	{4, 8} \
-}) // Identifies the attributes of the section
+})
 extern const mask_mapping_t	sec_flags[];
 // https://docs.oracle.com/cd/E37838_01/html/E61063/elf-23207.html
 // standard name: SHF_
@@ -265,45 +272,65 @@ extern const mask_mapping_t	sec_flags[];
 #define SEC_FLAG_ALLOC 0x2
 #define SEC_FLAG_EXECINSTR 0x4
 
+// standard name: sh_addr
+// Virtual address of the section in memory, for sections that are loaded
 #define SEC_ADDR ((elf_field_t) { \
 	{0xC, 0x10}, \
 	{4, 8} \
-}) // Virtual address of the section in memory, for sections that are loaded
+})
 
+// standard name: sh_offset
+// Offset of the section in the file image
 #define SEC_OFFSET ((elf_field_t) { \
 	{0x10, 0x18}, \
 	{4, 8} \
-}) // Offset of the section in the file image
+})
 
+// standard name: sh_link
+// Size in bytes of the section in the file image. May be 0
 #define SEC_SIZE ((elf_field_t) { \
 	{0x14, 0x20}, \
 	{4, 8} \
-}) // Size in bytes of the section in the file image. May be 0
+})
 
+// standard name: sh_link
+// Contains the section index of an associated section.
+// This field is used for several purposes, depending on the type of section
 #define SEC_LINK ((elf_field_t) { \
 	{0x18, 0x28}, \
 	{4, 4} \
-}) // Contains the section index of an associated section. This field is used for several purposes, depending on the type of section
+})
 
+// standard name: sh_info
+// Contains extra information about the section.
+// This field is used for several purposes, depending on the type of section.
 #define SEC_INFO ((elf_field_t) { \
 	{0x1C, 0x2C}, \
 	{4, 4} \
-}) // Contains extra information about the section. This field is used for several purposes, depending on the type of section. 
+})
 
+// standard name: sh_addralign
+// Contains the required alignment of the section.
+// This field must be a power of two.
 #define SEC_ADDRALIGN ((elf_field_t) { \
 	{0x20, 0x30}, \
 	{4, 8} \
-}) // Contains the required alignment of the section. This field must be a power of two. 
+})
 
+// standard name: sh_entsize
+// Contains the size, in bytes, of each entry,
+// for sections that contain fixed-size entries.
+// Otherwise, this field contains zero.
 #define SEC_ENTSIZE ((elf_field_t) { \
 	{0x24, 0x38}, \
 	{4, 8} \
-}) // Contains the size, in bytes, of each entry, for sections that contain fixed-size entries. Otherwise, this field contains zero. 
+})
 
+// The start to end of the section header
 #define SEC_HEADER ((elf_field_t) { \
 	{0, 0}, \
 	{0x28, 0x40} \
-}) // The start to end of the section header
+})
 
 
 
@@ -318,7 +345,7 @@ typedef struct {
 	unsigned char   st_info;
 	unsigned char   st_other;
 	Elf32_Half      st_shndx;
-} Elf32_Sym;
+}	Elf32_Sym;
 
 typedef struct {
 	Elf64_Word      st_name;
@@ -327,7 +354,7 @@ typedef struct {
 	Elf64_Half      st_shndx;
 	Elf64_Addr      st_value;
 	Elf64_Xword     st_size;
-} Elf64_Sym;
+}	Elf64_Sym;
 
 // Offset string in string table can be NULL
 #define SYM_NAME  DEFINE_FIELD(Elf32_Sym, Elf64_Sym, st_name)
@@ -392,3 +419,10 @@ typedef struct {
 // An escape value indicating that the actual section header index is too large to fit in the containing field.
 // The header section index is found in another location specific to the structure where it appears.
 #define SYM_REL_XINDEX 0xffff
+
+
+// The start to end of the symbol header
+#define SYM_HEADER   ((elf_field_t) { \
+	{0, 0}, \
+	{sizeof(Elf32_Sym), sizeof(Elf64_Sym)} \
+})

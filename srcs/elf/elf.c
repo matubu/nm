@@ -112,7 +112,7 @@ Res(elf_ptr) elf_from_string(const file_t *f)
 
 	#define invalid_elf(elf, s) { \
 		free(elf); \
-		throw("invalid ELF file: " s); \
+		throw(s); \
 	}
 
 	elf->f = f;
@@ -135,6 +135,9 @@ Res(elf_ptr) elf_from_string(const file_t *f)
 	// Check if the elf version is supported
 	if (get_elf_field(elf, ELF_EI_VERSION) != 1 || get_elf_field(elf, ELF_VERSION) != 1)
 		invalid_elf(elf, "version not supported");
+
+	if (get_elf_field(elf, ELF_SHENTSIZE) != SEC_HEADER.size[elf->class - 1])
+		invalid_elf(elf, "invalid section header entry size (e_shentsize)");
 
 	elf->shrtrtab = unwrap(get_shrtrtab(elf));
 
