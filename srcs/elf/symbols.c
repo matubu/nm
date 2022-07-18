@@ -161,10 +161,15 @@ void	sort_symbols(symbols_t *sym)
 
 void	print_symbol(elf_t *elf, symbol_t *sym)
 {
-	if (sym->undefined)
-		fmt((char *)"                " + (elf->class == ElfClass32 ? 8 : 0));
-	else
+	if (sym->undefined) {
+		fmt((char *)"                "
+			// Move by 8 char on 32 bit so we have only 8 space and not 16
+			+ (elf->class == ElfClass32 ? 8 : 0)
+		);
+	}
+	else {
 		fd_pad_hex(1, sym->value, elf->class == ElfClass32 ? 8 : 16);
+	}
 	fmt(" %c %s\n", sym->type, sym->name);
 }
 
