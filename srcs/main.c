@@ -39,10 +39,10 @@ void	nm(args_t *args, char *path)
 
 	if (args->flags & reverse_sort && !(args->flags & no_sort))
 		for (u64 i = symbols.data.cnt; i--;)
-			print_symbol(symbols.data.ptr + i);
+			print_symbol(elf.data, symbols.data.ptr + i);
 	else
 		for (u64 i = 0; i < symbols.data.cnt; ++i)
-			print_symbol(symbols.data.ptr + i);
+			print_symbol(elf.data, symbols.data.ptr + i);
 
 
 free:

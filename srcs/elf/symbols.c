@@ -159,12 +159,12 @@ void	sort_symbols(symbols_t *sym)
 	}
 }
 
-void	print_symbol(symbol_t *sym)
+void	print_symbol(elf_t *elf, symbol_t *sym)
 {
 	if (sym->undefined)
-		fmt("                ");
+		fmt((char *)"                " + (elf->class == ElfClass32 ? 8 : 0));
 	else
-		fmt("%x", sym->value);
+		fd_pad_hex(1, sym->value, elf->class == ElfClass32 ? 8 : 16);
 	fmt(" %c %s\n", sym->type, sym->name);
 }
 

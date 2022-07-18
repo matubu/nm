@@ -22,15 +22,15 @@ void	fd_puts(int fd, char *s) {
 	ignore(write(fd, s, len(s)));
 }
 
-void	fd_hex(int fd, u64 n) {
-	char	buf[16];
-	u64		i = 16;
+void	fd_pad_hex(int fd, u64 n, u32 size) {
+	char	buf[size];
+	u32		i = size;
 
 	while (i--) {
 		buf[i] = "0123456789abcdef"[n % 16];
 		n /= 16;
 	}
-	ignore(write(fd, buf, 16));
+	ignore(write(fd, buf, size));
 }
 
 void	putc(int fd, char c)
@@ -59,10 +59,6 @@ void	fd_fmt(int fd, char *fmt, ...)
 
 				case 'c':
 					putc(fd, va_arg(args, int));
-					break ;
-
-				case 'x':
-					fd_hex(fd, va_arg(args, u64));
 					break ;
 			}
 		}

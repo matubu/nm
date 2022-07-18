@@ -122,7 +122,7 @@ Res(elf_ptr) elf_from_string(const file_t *f)
 	if (get_elf_field(elf, ELF_MAGIC) != elf_magic)
 		invalid_elf(elf, "invalid magic bytes");
 
-	// Check the class (64 or 32 bit)
+	// Check the class (32 or 64 bit)
 	elf->class = get_elf_field(elf, ELF_CLASS);
 	if (elf->class != 1 && elf->class != 2)
 		invalid_elf(elf, "invalid class");

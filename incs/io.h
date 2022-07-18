@@ -12,6 +12,7 @@
 #define PUTS(fd, s) ignore(write(fd, s "\n", sizeof(s)));
 
 void	fd_puts(int fd, char *s);
+void	fd_pad_hex(int fd, u64 n, u32 size);
 void	fd_fmt(int fd, char *fmt, ...);
 void	help();
 

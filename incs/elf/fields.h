@@ -57,10 +57,8 @@ typedef uint64_t Elf64_Sxword;
 	{1, 1} \
 })
 
-#define LittleEndian 1
-#define BigEndian 2
-// https://www.embeddedsoft.net/simple-code-to-find-endianness-in-c/
-#define CurrentEndian (2 - *(char *)((int []){1}) == 1)
+#define ElfClass32 1
+#define ElfClass64 2
 
 extern const char	*elf_class[];
 
@@ -68,6 +66,12 @@ extern const char	*elf_class[];
 	{0x5, 0x5}, \
 	{1, 1} \
 })
+
+#define LittleEndian 1
+#define BigEndian 2
+// https://www.embeddedsoft.net/simple-code-to-find-endianness-in-c/
+#define CurrentEndian (2 - *(char *)((int []){1}) == 1)
+
 extern const char	*elf_data[];
 
 #define ELF_EI_VERSION ((elf_field_t) { \

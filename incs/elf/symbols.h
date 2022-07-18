@@ -18,5 +18,5 @@ typedef struct {
 
 Res(symbols_t)	get_symbols(args_t *args, elf_t *elf);
 void			sort_symbols(symbols_t *sym);
-void			print_symbol(symbol_t *sym);
+void			print_symbol(elf_t *elf, symbol_t *sym);
 void			free_symbols(symbols_t *sym);

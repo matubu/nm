@@ -1,5 +1,6 @@
 SRCS = $(wildcard srcs/*)
 ELFS += $(patsubst srcs/%,elf/%.out,$(SRCS))
+ELFS += $(patsubst srcs/%,elf/%.32.out,$(SRCS))
 ELFS += $(patsubst srcs/%,elf/%.o,$(SRCS))
 ELFS += $(patsubst srcs/%,elf/%.so,$(SRCS))
 
@@ -17,12 +18,16 @@ elf: $(SRCS)
 elf_linux: $(ELFS)
 
 elf_docker:
-	docker compose up --build
+	@docker compose up --build
 
 elf/%.cpp.out: srcs/%.cpp
 	g++ $^ -o $@
+elf/%.cpp.32.out: srcs/%.cpp
+	g++ -m32 $^ -o $@
 elf/%.c.out: srcs/%.c
 	gcc $^ -o $@
+elf/%.c.32.out: srcs/%.c
+	gcc -m32 $^ -o $@
 
 elf/%.cpp.o: srcs/%.cpp
 	g++ $^ -c -o $@
@@ -45,11 +50,10 @@ test:
 	@echo "-ft_nm"
 	@echo "+nm"
 	@for elf in $(notdir $(ELFS)); do \
-		echo "\033[1;91m>>> diff $$elf <<<\033[0m\n"; \
+		echo "\033[1;91m>>> diff $$elf <<<\033[0m"; \
 		../ft_nm elf/$$elf > ./logs/ft_nm/$$elf; \
 		nm elf/$$elf > ./logs/nm/$$elf; \
 		diff -U0 logs/ft_nm/$$elf logs/nm/$$elf; \
-		echo "\n"; \
 	done
 
 .PHONY: elf fclean re test
