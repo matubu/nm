@@ -102,7 +102,7 @@ static inline Res(symbols_t)	parse_elf_symbols(args_t *args, elf_t *elf, u64 sec
 
 	u64			sym_sec_entsize = get_field(elf, sec_off, SEC_ENTSIZE);
 	if (sym_sec_entsize != SYM_HEADER.size[elf->class - 1])
-		throw("invalid symbol header entry size");
+		throw("invalid symbol header entry size (sh_entsize)");
 	u64			sym_sec_off = get_field(elf, sec_off, SEC_OFFSET) + sym_sec_entsize;
 
 	u64			cnt = (get_field(elf, sec_off, SEC_SIZE) / sym_sec_entsize) - 1;
