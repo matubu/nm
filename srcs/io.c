@@ -33,7 +33,7 @@ void	fd_pad_hex(int fd, u64 n, u32 size) {
 	ignore(write(fd, buf, size));
 }
 
-void	putc(int fd, char c)
+void	fd_putchar(int fd, char c)
 {
 	ignore(write(fd, &c, 1));
 }
@@ -58,7 +58,7 @@ void	fd_fmt(int fd, char *fmt, ...)
 					break ;
 
 				case 'c':
-					putc(fd, va_arg(args, int));
+					fd_putchar(fd, va_arg(args, int));
 					break ;
 			}
 		}
