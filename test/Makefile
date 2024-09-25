@@ -40,7 +40,7 @@ elf/%.c.so: srcs/%.c
 	gcc $^ -shared -fPIC -o $@
 
 fclean:
-	@echo "🗑  $(Red)deleting$(Eoc)  elf"
+	@echo -e "🗑  $(Red)deleting$(Eoc)  elf"
 	@rm -rf elf
 
 re: fclean elf
@@ -50,7 +50,7 @@ test:
 	@echo "-ft_nm"
 	@echo "+nm"
 	@for elf in $(notdir $(ELFS)); do \
-		echo "\033[1;91m>>> diff $$elf <<<\033[0m"; \
+		echo -e "\n\n\033[1;91m>>> diff $$elf <<<\033[0m"; \
 		../ft_nm elf/$$elf > ./logs/ft_nm/$$elf; \
 		nm elf/$$elf > ./logs/nm/$$elf; \
 		diff -U0 logs/ft_nm/$$elf logs/nm/$$elf; \
